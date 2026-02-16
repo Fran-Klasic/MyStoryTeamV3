@@ -1,0 +1,51 @@
+html,
+body {
+  margin: 0;
+  padding: 0;
+}
+
+body {
+  font-family: var(--mst-font-family-base);
+  font-size: var(--mst-font-size-md);
+  line-height: var(--mst-line-height-normal);
+  color: var(--mst-color-text);
+  background: radial-gradient(circle at top, #f7fdff 0, var(--mst-color-bg) 55%);
+  min-height: 100vh;
+}
+
+h1,
+h2,
+h3,
+h4 {
+  margin: 0;
+  font-weight: 650;
+  letter-spacing: 0.03em;
+}
+
+h1 {
+  font-size: var(--mst-font-size-hero);
+  line-height: var(--mst-line-height-tight);
+}
+
+h2 {
+  font-size: var(--mst-font-size-2xl);
+}
+
+h3 {
+  font-size: var(--mst-font-size-xl);
+}
+
+p {
+  margin: 0;
+  color: var(--mst-color-text-soft);
+}
+
+a {
+  color: var(--mst-color-accent);
+  text-decoration: none;
+}
+
+a:hover {
+  text-decoration: underline;
+}
+

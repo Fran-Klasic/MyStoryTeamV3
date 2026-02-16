@@ -1,0 +1,53 @@
+:root {
+  /* Colors */
+  --mst-color-bg: #d6f7ff; /* light blue background */
+  --mst-color-bg-elevated: #1f2933; /* dark gray panels */
+  --mst-color-bg-elevated-soft: #27323f;
+  --mst-color-surface-border: #3aa7c4;
+
+  --mst-color-text: #111827; /* primary text dark */
+  --mst-color-text-soft: #4b5563;
+  --mst-color-text-inverse: #e0f7ff;
+
+  --mst-color-accent: #44d3ff;
+  --mst-color-accent-soft: rgba(68, 211, 255, 0.2);
+
+  --mst-shadow-soft: 0 18px 45px rgba(0, 0, 0, 0.25);
+  --mst-shadow-glow: 0 0 25px rgba(68, 211, 255, 0.45);
+
+  /* Typography */
+  --mst-font-family-base: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI",
+    sans-serif;
+  --mst-font-size-xs: 0.75rem;
+  --mst-font-size-sm: 0.875rem;
+  --mst-font-size-md: 1rem;
+  --mst-font-size-lg: 1.25rem;
+  --mst-font-size-xl: 1.75rem;
+  --mst-font-size-2xl: 2.25rem;
+  --mst-font-size-hero: clamp(2.75rem, 4vw, 3.75rem);
+
+  --mst-line-height-tight: 1.1;
+  --mst-line-height-normal: 1.5;
+
+  /* Spacing & Radius */
+  --mst-space-xs: 0.25rem;
+  --mst-space-sm: 0.5rem;
+  --mst-space-md: 0.75rem;
+  --mst-space-lg: 1rem;
+  --mst-space-xl: 1.5rem;
+  --mst-space-2xl: 2.5rem;
+
+  --mst-radius-sm: 0.5rem;
+  --mst-radius-md: 0.9rem;
+  --mst-radius-lg: 1.25rem;
+  --mst-radius-pill: 999px;
+
+  /* Motion */
+  --mst-duration-fast: 120ms;
+  --mst-duration: 200ms;
+  --mst-duration-slow: 320ms;
+
+  --mst-ease-standard: cubic-bezier(0.2, 0.6, 0.2, 1);
+  --mst-ease-soft: cubic-bezier(0.22, 1, 0.36, 1);
+}
+
