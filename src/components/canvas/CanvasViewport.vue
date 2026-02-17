@@ -15,6 +15,7 @@ const props = defineProps<{
   readOnly?: boolean;
   backgroundImage?: string | null;
   backgroundColor?: string | null;
+  selectedAddType?: CanvasElement["type"] | null;
 }>();
 
 const emit = defineEmits<{
@@ -33,7 +34,7 @@ const emit = defineEmits<{
 }>();
 
 const viewportRef = ref<HTMLElement | null>(null);
-const { transformStyle, zoomAt, panBy, zoom, offsetX, offsetY } = useCanvasPanZoom();
+const { transformStyle, zoomAt, panBy, zoomBy, zoom, offsetX, offsetY } = useCanvasPanZoom();
 
 const draggingId = ref<ID | null>(null);
 const resizingId = ref<ID | null>(null);
@@ -46,6 +47,18 @@ const isPanning = ref(false);
 // Connect-by-drag: source element and current pointer in canvas space
 const connectFromId = ref<ID | null>(null);
 const connectLineEnd = ref<{ x: number; y: number } | null>(null);
+
+// Pointer/touch tracking for mobile
+const activePointers = ref<Map<number, { clientX: number; clientY: number }>>(new Map());
+const panStartPos = ref<{ x: number; y: number } | null>(null);
+const pendingTapPlace = ref<{ x: number; y: number; clientX: number; clientY: number } | null>(null);
+const pointerStartPos = ref<{ x: number; y: number } | null>(null);
+const pendingTapElementId = ref<ID | null>(null);
+const lastTapElementId = ref<ID | null>(null);
+const lastTapTime = ref(0);
+
+const TAP_MOVE_THRESHOLD = 10;
+const DOUBLE_TAP_MS = 350;
 
 const draggingElement = computed(() =>
   props.elements.find((e) => e.id === draggingId.value) || null,
@@ -113,7 +126,7 @@ const isMovingResizingOrConnecting = computed(
     connectFromId.value != null,
 );
 
-// Zoom: Ctrl+wheel toward cursor
+// Zoom: Ctrl+wheel toward cursor (desktop)
 function onViewportWheel(event: WheelEvent) {
   if (!event.ctrlKey) return;
   event.preventDefault();
@@ -124,19 +137,43 @@ function onViewportWheel(event: WheelEvent) {
   const vy = event.clientY - rect.top;
   const delta = event.deltaY > 0 ? -0.1 : 0.1;
   zoomAt(vx, vy, delta);
-  const minX = rect.width - CANVAS_WIDTH * zoom.value;
-  const minY = rect.height - CANVAS_HEIGHT * zoom.value;
+  clampPan();
+}
+
+function clampPan() {
+  const el = viewportRef.value;
+  if (!el) return;
+  const r = el.getBoundingClientRect();
+  const minX = r.width - CANVAS_WIDTH * zoom.value;
+  const minY = r.height - CANVAS_HEIGHT * zoom.value;
   offsetX.value = Math.max(minX, Math.min(0, offsetX.value));
   offsetY.value = Math.max(minY, Math.min(0, offsetY.value));
 }
 
-// Middle mouse: pan (anywhere in viewport)
-function onViewportMouseDown(event: MouseEvent) {
-  if (event.button === 1) {
-    event.preventDefault();
-    isPanning.value = true;
-    lastX.value = event.clientX;
-    lastY.value = event.clientY;
+// Viewport pointer down: pan (touch or middle mouse) or tap-to-place
+function onViewportPointerDown(event: PointerEvent) {
+  const pos = screenToCanvas(event.clientX, event.clientY);
+  const hit = hitTest(pos.x, pos.y);
+  if (hit) return;
+
+  if (event.button === 1 || event.pointerType === "touch") {
+    if (event.pointerType === "touch") {
+      activePointers.value = new Map(activePointers.value);
+      activePointers.value.set(event.pointerId, { clientX: event.clientX, clientY: event.clientY });
+      if (activePointers.value.size === 1) {
+        panStartPos.value = { x: event.clientX, y: event.clientY };
+        pendingTapPlace.value = props.selectedAddType
+          ? { x: pos.x, y: pos.y, clientX: event.clientX, clientY: event.clientY }
+          : null;
+      } else if (activePointers.value.size === 2) {
+        pendingTapPlace.value = null;
+      }
+    } else {
+      event.preventDefault();
+      isPanning.value = true;
+      lastX.value = event.clientX;
+      lastY.value = event.clientY;
+    }
   }
 }
 
@@ -149,26 +186,113 @@ function onDrop(event: DragEvent) {
   emit("add", { type, x, y });
 }
 
-function onElementMouseDown(id: ID, event: MouseEvent) {
-  if (event.button !== 0) return;
+function onElementPointerDown(id: ID, event: PointerEvent) {
+  if (event.button !== 0 && event.pointerType === "mouse") return;
   if (props.readOnly) return;
   if (editingId.value === id) return;
+  if (event.pointerType === "touch") {
+    const ptrs = new Map(activePointers.value);
+    ptrs.set(event.pointerId, { clientX: event.clientX, clientY: event.clientY });
+    activePointers.value = ptrs;
+    pointerStartPos.value = { x: event.clientX, y: event.clientY };
+    pendingTapElementId.value = id;
+    return;
+  }
   draggingId.value = id;
   lastX.value = event.clientX;
   lastY.value = event.clientY;
 }
 
-function onResizeMouseDown(id: ID, event: MouseEvent) {
-  if (event.button !== 0) return;
+function onMoveButtonPointerDown(id: ID, event: PointerEvent) {
+  if (event.button !== 0 && event.pointerType === "mouse") return;
   if (props.readOnly) return;
   event.preventDefault();
+  event.stopPropagation();
+  pendingTapElementId.value = null;
+  if (event.pointerType === "touch") {
+    const ptrs = new Map(activePointers.value);
+    ptrs.set(event.pointerId, { clientX: event.clientX, clientY: event.clientY });
+    activePointers.value = ptrs;
+  }
+  draggingId.value = id;
+  lastX.value = event.clientX;
+  lastY.value = event.clientY;
+}
+
+function onResizePointerDown(id: ID, event: PointerEvent) {
+  if (event.button !== 0 && event.pointerType === "mouse") return;
+  if (props.readOnly) return;
+  event.preventDefault();
+  pendingTapElementId.value = null;
   resizingId.value = id;
   lastX.value = event.clientX;
   lastY.value = event.clientY;
 }
 
-function onMouseMove(event: MouseEvent) {
+function onConnectHandlePointerDown(id: ID, event: PointerEvent) {
+  if (event.button !== 0 && event.pointerType === "mouse") return;
+  if (props.readOnly) return;
+  event.preventDefault();
+  event.stopPropagation();
+  pendingTapElementId.value = null;
+  connectFromId.value = id;
+  const pos = screenToCanvas(event.clientX, event.clientY);
+  connectLineEnd.value = { x: pos.x, y: pos.y };
+}
+
+function onPointerMove(event: PointerEvent) {
   const canvasPos = screenToCanvas(event.clientX, event.clientY);
+
+  if (event.pointerType === "touch") {
+    const ptrs = new Map(activePointers.value);
+    if (ptrs.has(event.pointerId)) {
+      ptrs.set(event.pointerId, { clientX: event.clientX, clientY: event.clientY });
+      activePointers.value = ptrs;
+    }
+    if (ptrs.size === 2) {
+      const vals = Array.from(ptrs.values());
+      const p1 = vals[0];
+      const p2 = vals[1];
+      if (!p1 || !p2) return;
+      const dist = Math.hypot(p2.clientX - p1.clientX, p2.clientY - p1.clientY);
+      const centerX = (p1.clientX + p2.clientX) / 2;
+      const centerY = (p1.clientY + p2.clientY) / 2;
+      const el = viewportRef.value;
+      if (el) {
+        const rect = el.getBoundingClientRect();
+        const vx = centerX - rect.left;
+        const vy = centerY - rect.top;
+        const prevDist = (window as { _pinchPrevDist?: number })._pinchPrevDist;
+        if (prevDist != null && prevDist > 0) {
+          const delta = (dist - prevDist) / prevDist * 0.5;
+          zoomAt(vx, vy, delta);
+          clampPan();
+        }
+        (window as { _pinchPrevDist?: number })._pinchPrevDist = dist;
+      }
+      pendingTapPlace.value = null;
+      return;
+    }
+    if (ptrs.size === 1 && panStartPos.value) {
+      const dx = Math.abs(event.clientX - panStartPos.value.x);
+      const dy = Math.abs(event.clientY - panStartPos.value.y);
+      if (dx > TAP_MOVE_THRESHOLD || dy > TAP_MOVE_THRESHOLD) {
+        if (!isPanning.value) {
+          isPanning.value = true;
+          lastX.value = panStartPos.value.x;
+          lastY.value = panStartPos.value.y;
+        }
+        pendingTapPlace.value = null;
+      }
+    }
+    if (pendingTapElementId.value && pointerStartPos.value) {
+      const dx = Math.abs(event.clientX - pointerStartPos.value.x);
+      const dy = Math.abs(event.clientY - pointerStartPos.value.y);
+      if (dx > TAP_MOVE_THRESHOLD || dy > TAP_MOVE_THRESHOLD) {
+        pendingTapElementId.value = null;
+      }
+    }
+  }
 
   if (isPanning.value) {
     const dx = event.clientX - lastX.value;
@@ -176,14 +300,7 @@ function onMouseMove(event: MouseEvent) {
     lastX.value = event.clientX;
     lastY.value = event.clientY;
     panBy(dx, dy);
-    const el = viewportRef.value;
-    if (el) {
-      const r = el.getBoundingClientRect();
-      const minX = r.width - CANVAS_WIDTH * zoom.value;
-      const minY = r.height - CANVAS_HEIGHT * zoom.value;
-      offsetX.value = Math.max(minX, Math.min(0, offsetX.value));
-      offsetY.value = Math.max(minY, Math.min(0, offsetY.value));
-    }
+    clampPan();
     return;
   }
 
@@ -233,8 +350,44 @@ function onMouseMove(event: MouseEvent) {
   }
 }
 
-function onMouseUp(event: MouseEvent) {
-  if (connectFromId.value !== null && event.button === 0) {
+function onPointerUp(event: PointerEvent) {
+  if (event.pointerType === "touch") {
+    const ptrs = new Map(activePointers.value);
+    ptrs.delete(event.pointerId);
+    activePointers.value = ptrs;
+    if (ptrs.size < 2) {
+      (window as { _pinchPrevDist?: number })._pinchPrevDist = undefined;
+    }
+    if (ptrs.size === 0) {
+      panStartPos.value = null;
+      if (pendingTapPlace.value && props.selectedAddType) {
+        emit("add", { type: props.selectedAddType, x: pendingTapPlace.value.x, y: pendingTapPlace.value.y });
+      }
+      pendingTapPlace.value = null;
+      if (pendingTapElementId.value) {
+        const tappedId = pendingTapElementId.value;
+        pendingTapElementId.value = null;
+        const now = Date.now();
+        if (lastTapElementId.value === tappedId && now - lastTapTime.value < DOUBLE_TAP_MS) {
+          editingId.value = tappedId;
+          editingWrapperRef.value = null;
+          setTimeout(() => {
+            const wrapper = viewportRef.value?.querySelector(`[data-element-id="${tappedId}"]`);
+            editingWrapperRef.value = wrapper as HTMLElement | null;
+          }, 0);
+          lastTapElementId.value = null;
+          lastTapTime.value = 0;
+        } else {
+          lastTapElementId.value = tappedId;
+          lastTapTime.value = now;
+        }
+      }
+    }
+  } else {
+    pendingTapElementId.value = null;
+  }
+
+  if (connectFromId.value !== null && (event.button === 0 || event.pointerType === "touch")) {
     const targetId = connectTargetId.value;
     if (targetId) {
       emit("connect", { self: connectFromId.value, target: targetId });
@@ -242,19 +395,11 @@ function onMouseUp(event: MouseEvent) {
     connectFromId.value = null;
     connectLineEnd.value = null;
   }
+
+  pointerStartPos.value = null;
   draggingId.value = null;
   resizingId.value = null;
   isPanning.value = false;
-}
-
-function onConnectHandleMouseDown(id: ID, event: MouseEvent) {
-  if (event.button !== 0) return;
-  if (props.readOnly) return;
-  event.preventDefault();
-  event.stopPropagation();
-  connectFromId.value = id;
-  const pos = screenToCanvas(event.clientX, event.clientY);
-  connectLineEnd.value = { x: pos.x, y: pos.y };
 }
 
 function onElementDblClick(id: ID) {
@@ -267,13 +412,6 @@ function onElementDblClick(id: ID) {
   }, 0);
 }
 
-function onDocumentMouseDown(event: MouseEvent) {
-  if (editingId.value == null) return;
-  const target = event.target as Node;
-  if (editingWrapperRef.value?.contains(target)) return;
-  editingId.value = null;
-  editingWrapperRef.value = null;
-}
 
 function onTextUpdate(id: ID, text: string) {
   emit("edit", { id, text });
@@ -321,16 +459,28 @@ const draftLinePath = computed(() => {
   return connectionPath(start.x, start.y, x2, y2);
 });
 
+function onDocumentPointerDown(event: PointerEvent) {
+  if (editingId.value == null) return;
+  const target = event.target as Node;
+  if (editingWrapperRef.value?.contains(target)) return;
+  editingId.value = null;
+  editingWrapperRef.value = null;
+}
+
 onMounted(() => {
-  window.addEventListener("mouseup", onMouseUp);
-  document.addEventListener("mousedown", onDocumentMouseDown, true);
+  window.addEventListener("pointerup", onPointerUp);
+  window.addEventListener("pointercancel", onPointerUp);
+  window.addEventListener("pointermove", onPointerMove);
+  document.addEventListener("pointerdown", onDocumentPointerDown, true);
   const el = viewportRef.value;
   if (el) el.addEventListener("wheel", onViewportWheel, { passive: false });
 });
 
 onBeforeUnmount(() => {
-  window.removeEventListener("mouseup", onMouseUp);
-  document.removeEventListener("mousedown", onDocumentMouseDown, true);
+  window.removeEventListener("pointerup", onPointerUp);
+  window.removeEventListener("pointercancel", onPointerUp);
+  window.removeEventListener("pointermove", onPointerMove);
+  document.removeEventListener("pointerdown", onDocumentPointerDown, true);
   const el = viewportRef.value;
   if (el) el.removeEventListener("wheel", onViewportWheel);
 });
@@ -344,8 +494,7 @@ onBeforeUnmount(() => {
       'mst-canvas-viewport--moving-resizing-connecting': isMovingResizingOrConnecting,
       'mst-canvas-viewport--readonly': readOnly,
     }"
-    @mousedown="onViewportMouseDown"
-    @mousemove="onMouseMove"
+    @pointerdown="onViewportPointerDown"
     @dragover.prevent
     @drop="onDrop"
   >
@@ -404,19 +553,29 @@ onBeforeUnmount(() => {
           width: element.size.x + 'px',
           height: element.size.y + 'px',
         }"
-        @mousedown.left.stop="onElementMouseDown(element.id, $event)"
+        @pointerdown.stop="onElementPointerDown(element.id, $event)"
         @dblclick.stop="onElementDblClick(element.id)"
       >
+        <button
+          v-if="!readOnly"
+          type="button"
+          class="mst-canvas-element__move"
+          title="Move"
+          aria-label="Move element"
+          @pointerdown.stop="onMoveButtonPointerDown(element.id, $event)"
+        >
+          ⋮⋮
+        </button>
         <div
           v-if="!readOnly"
           class="mst-canvas-element__connect-handle"
           title="Drag to connect"
-          @mousedown.stop="onConnectHandleMouseDown(element.id, $event)"
+          @pointerdown.stop="onConnectHandlePointerDown(element.id, $event)"
         />
         <div
           v-if="!readOnly"
           class="mst-canvas-element__resize"
-          @mousedown.stop.prevent="onResizeMouseDown(element.id, $event)"
+          @pointerdown.stop.prevent="onResizePointerDown(element.id, $event)"
         />
         <button
           v-if="!readOnly"
@@ -443,6 +602,10 @@ onBeforeUnmount(() => {
         </div>
       </div>
     </div>
+    <div v-if="!readOnly" class="mst-canvas-zoom-buttons mst-canvas-zoom-buttons--mobile">
+      <button type="button" class="mst-canvas-zoom-btn" aria-label="Zoom in" @click="zoomBy(0.2)">+</button>
+      <button type="button" class="mst-canvas-zoom-btn" aria-label="Zoom out" @click="zoomBy(-0.2)">−</button>
+    </div>
   </div>
 </template>
 
@@ -451,6 +614,7 @@ onBeforeUnmount(() => {
   position: relative;
   overflow: hidden;
   border-radius: var(--mst-radius-lg);
+  touch-action: none;
   border: 1px solid rgba(58, 167, 196, 0.4);
   background-color: var(--mst-color-bg-elevated-soft);
   min-height: 280px;
@@ -551,6 +715,9 @@ onBeforeUnmount(() => {
   box-sizing: border-box;
 }
 
+.mst-canvas-element__move {
+  display: none;
+}
 .mst-canvas-element__delete {
   position: absolute;
   top: 4px;
@@ -609,5 +776,79 @@ onBeforeUnmount(() => {
 
 .mst-canvas-element__resize:hover {
   opacity: 1;
+}
+
+@media (pointer: coarse), (max-width: 600px) {
+  .mst-canvas-element__move {
+    display: flex;
+    position: absolute;
+    top: 4px;
+    left: 4px;
+    z-index: 1;
+    width: 44px;
+    height: 44px;
+    align-items: center;
+    justify-content: center;
+    border: none;
+    border-radius: var(--mst-radius-sm);
+    background: rgba(31, 41, 55, 0.55);
+    color: #e0f7ff;
+    font-size: 1rem;
+    cursor: grab;
+    letter-spacing: -0.2em;
+  }
+  .mst-canvas-element__move:active {
+    cursor: grabbing;
+  }
+  .mst-canvas-element__delete {
+    width: 44px;
+    height: 44px;
+    top: 2px;
+    right: 2px;
+    font-size: 1.25rem;
+  }
+  .mst-canvas-element__connect-handle {
+    width: 44px;
+    height: 44px;
+    bottom: 2px;
+    left: 2px;
+  }
+  .mst-canvas-element__resize {
+    width: 44px;
+    height: 44px;
+  }
+}
+
+.mst-canvas-zoom-buttons {
+  display: none;
+  position: absolute;
+  bottom: 1rem;
+  right: 1rem;
+  flex-direction: column;
+  gap: 0.25rem;
+  z-index: 5;
+}
+@media (pointer: coarse), (max-width: 600px) {
+  .mst-canvas-zoom-buttons--mobile {
+    display: flex;
+  }
+}
+.mst-canvas-zoom-btn {
+  width: 44px;
+  height: 44px;
+  border-radius: var(--mst-radius-md);
+  border: 1px solid rgba(58, 167, 196, 0.5);
+  background: rgba(255, 255, 255, 0.95);
+  color: var(--mst-color-text);
+  font-size: 1.25rem;
+  font-weight: 600;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+.mst-canvas-zoom-btn:active {
+  background: var(--mst-color-accent-soft);
 }
 </style>

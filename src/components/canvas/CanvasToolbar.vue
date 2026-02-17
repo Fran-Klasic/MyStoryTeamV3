@@ -1,8 +1,13 @@
 <script setup lang="ts">
 import type { CanvasElement } from "@/types/canvas/canvas-element";
 
-defineProps<{
+const props = defineProps<{
   readOnly?: boolean;
+  selectedAddType?: CanvasElement["type"] | null;
+}>();
+
+const emit = defineEmits<{
+  (e: "update:selectedAddType", value: CanvasElement["type"] | null): void;
 }>();
 
 const ELEMENT_TYPES: { type: CanvasElement["type"]; label: string; icon: string }[] = [
@@ -35,6 +40,11 @@ function onDragStart(type: CanvasElement["type"], event: DragEvent) {
   event.dataTransfer?.setDragImage(ghost, 24, 16);
   requestAnimationFrame(() => ghost.remove());
 }
+
+function onTap(item: { type: CanvasElement["type"] }) {
+  const next = props.selectedAddType === item.type ? null : item.type;
+  emit("update:selectedAddType", next);
+}
 </script>
 
 <template>
@@ -43,9 +53,11 @@ function onDragStart(type: CanvasElement["type"], event: DragEvent) {
       v-for="item in ELEMENT_TYPES"
       :key="item.type"
       class="mst-canvas-toolbar__item"
+      :class="{ 'mst-canvas-toolbar__item--selected': props.selectedAddType === item.type }"
       draggable="true"
       type="button"
       @dragstart="onDragStart(item.type, $event)"
+      @click="onTap(item)"
     >
       <img :src="item.icon" :alt="item.label" class="mst-canvas-toolbar__icon" />
       <span class="mst-canvas-toolbar__label">{{ item.label }}</span>
@@ -92,6 +104,11 @@ function onDragStart(type: CanvasElement["type"], event: DragEvent) {
 
 .mst-canvas-toolbar__item:active {
   cursor: grabbing;
+}
+.mst-canvas-toolbar__item--selected {
+  border-color: var(--mst-color-accent);
+  box-shadow: 0 0 12px rgba(68, 211, 255, 0.3);
+  background: rgba(68, 211, 255, 0.15);
 }
 
 .mst-canvas-toolbar__icon {

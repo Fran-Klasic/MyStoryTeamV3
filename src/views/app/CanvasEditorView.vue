@@ -15,6 +15,7 @@ const router = useRouter();
 const canvasStore = useCanvasStore();
 const authStore = useAuthStore();
 const isSaving = ref(false);
+const selectedAddType = ref<CanvasElement["type"] | null>(null);
 
 const id = computed(() => (route.name === "canvas-editor" ? (route.params.id as string) : undefined));
 const isNew = computed(() => route.name === "canvas-new" || id.value === "new");
@@ -142,6 +143,11 @@ function handleConnect(payload: { self: string; target: string }) {
 function handleAdd(payload: { type: CanvasElement["type"]; x: number; y: number }) {
   if (readOnly.value) return;
   addElement(payload.type, payload.x, payload.y);
+  selectedAddType.value = null;
+}
+
+function setSelectedAddType(v: CanvasElement["type"] | null) {
+  selectedAddType.value = v;
 }
 
 function handleUpdateMeta(meta: Partial<CanvasMeta>) {
@@ -174,18 +180,22 @@ async function handleDeleteCanvas() {
     <div v-if="isSaving" class="mst-canvas-editor__loading">
       <div class="mst-canvas-editor__loading-spinner" />
       <p class="mst-canvas-editor__loading-text">Saving canvas…</p>
-      <p class="mst-canvas-editor__loading-hint">It may take longer if an image is being uploaded.</p>
     </div>
     <div v-if="readOnly" class="mst-canvas-editor__readonly-banner">
       View only — you're viewing someone else's canvas
     </div>
     <div class="mst-canvas-editor__body">
-      <CanvasToolbar :read-only="readOnly" />
+      <CanvasToolbar
+        :read-only="readOnly"
+        :selected-add-type="selectedAddType"
+        @update:selected-add-type="setSelectedAddType"
+      />
       <CanvasViewport
         :elements="elements"
         :read-only="readOnly"
         :background-image="currentMeta?.previewImage ?? null"
         :background-color="currentMeta?.backgroundColor ?? null"
+        :selected-add-type="selectedAddType"
         @move="handleMove"
         @resize="handleResize"
         @edit="handleEdit"
@@ -237,11 +247,6 @@ async function handleDeleteCanvas() {
   font-size: var(--mst-font-size-md);
   font-weight: 500;
   color: var(--mst-color-text);
-}
-.mst-canvas-editor__loading-hint {
-  margin: 0;
-  font-size: var(--mst-font-size-xs);
-  color: var(--mst-color-text-soft);
 }
 @keyframes mst-spin {
   to { transform: rotate(360deg); }
