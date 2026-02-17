@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { watch, computed, onMounted } from "vue";
+import { ref, watch, computed, onMounted, nextTick } from "vue";
 import { useRoute, useRouter } from "vue-router";
 import CanvasViewport from "@/components/canvas/CanvasViewport.vue";
 import CanvasToolbar from "@/components/canvas/CanvasToolbar.vue";
@@ -14,6 +14,7 @@ const route = useRoute();
 const router = useRouter();
 const canvasStore = useCanvasStore();
 const authStore = useAuthStore();
+const isSaving = ref(false);
 
 const id = computed(() => (route.name === "canvas-editor" ? (route.params.id as string) : undefined));
 const isNew = computed(() => route.name === "canvas-new" || id.value === "new");
@@ -148,9 +149,15 @@ function handleUpdateMeta(meta: Partial<CanvasMeta>) {
   canvasStore.setCurrentMeta(meta);
 }
 
-function handleSave() {
+async function handleSave() {
   if (readOnly.value) return;
-  canvasStore.saveCurrentCanvas();
+  isSaving.value = true;
+  await nextTick();
+  try {
+    await canvasStore.saveCurrentCanvas();
+  } finally {
+    isSaving.value = false;
+  }
 }
 
 async function handleDeleteCanvas() {
@@ -164,6 +171,11 @@ async function handleDeleteCanvas() {
 
 <template>
   <div class="mst-canvas-editor">
+    <div v-if="isSaving" class="mst-canvas-editor__loading">
+      <div class="mst-canvas-editor__loading-spinner" />
+      <p class="mst-canvas-editor__loading-text">Saving canvas…</p>
+      <p class="mst-canvas-editor__loading-hint">It may take longer if an image is being uploaded.</p>
+    </div>
     <div v-if="readOnly" class="mst-canvas-editor__readonly-banner">
       View only — you're viewing someone else's canvas
     </div>
@@ -191,6 +203,7 @@ async function handleDeleteCanvas() {
     <CanvasOptionsPanel
       :meta="currentMeta"
       :read-only="readOnly"
+      :saving="isSaving"
       @update:meta="handleUpdateMeta"
       @save="handleSave"
       @delete="handleDeleteCanvas"
@@ -199,6 +212,40 @@ async function handleDeleteCanvas() {
 </template>
 
 <style scoped>
+.mst-canvas-editor__loading {
+  position: fixed;
+  inset: 0;
+  z-index: 100;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 1rem;
+  background: rgba(255, 255, 255, 0.9);
+  backdrop-filter: blur(4px);
+}
+.mst-canvas-editor__loading-spinner {
+  width: 48px;
+  height: 48px;
+  border: 4px solid rgba(58, 167, 196, 0.3);
+  border-top-color: var(--mst-color-accent);
+  border-radius: 50%;
+  animation: mst-spin 0.8s linear infinite;
+}
+.mst-canvas-editor__loading-text {
+  margin: 0;
+  font-size: var(--mst-font-size-md);
+  font-weight: 500;
+  color: var(--mst-color-text);
+}
+.mst-canvas-editor__loading-hint {
+  margin: 0;
+  font-size: var(--mst-font-size-xs);
+  color: var(--mst-color-text-soft);
+}
+@keyframes mst-spin {
+  to { transform: rotate(360deg); }
+}
 .mst-canvas-editor__readonly-banner {
   padding: 0.4rem 0.75rem;
   font-size: var(--mst-font-size-sm);

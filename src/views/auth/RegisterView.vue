@@ -1,11 +1,9 @@
 <script setup lang="ts">
 import { ref } from "vue";
-import { useRouter } from "vue-router";
 import AuthCard from "@/components/auth/AuthCard.vue";
 import RegisterForm from "@/components/auth/RegisterForm.vue";
 import { useAuthStore } from "@/store/auth.store";
 
-const router = useRouter();
 const authStore = useAuthStore();
 const errorMessage = ref("");
 

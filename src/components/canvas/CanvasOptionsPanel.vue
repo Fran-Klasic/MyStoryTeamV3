@@ -5,6 +5,7 @@ import type { CanvasMeta } from "@/types/canvas-meta";
 const props = defineProps<{
   meta: CanvasMeta | null;
   readOnly?: boolean;
+  saving?: boolean;
 }>();
 
 const emit = defineEmits<{
@@ -153,9 +154,10 @@ function onDelete() {
         <button
           type="button"
           class="mst-canvas-options__save"
+          :disabled="saving"
           @click="onSave"
         >
-          Save
+          {{ saving ? "Saving…" : "Save" }}
         </button>
       </div>
       <div class="mst-canvas-options__group">

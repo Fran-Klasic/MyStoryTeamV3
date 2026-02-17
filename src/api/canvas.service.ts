@@ -57,7 +57,7 @@ function normalizeCanvasElement(raw: unknown): CanvasElement | null {
       return { id, type: "List", data: { listData: Array.isArray(listData) ? listData : ["Item 1"] }, position, size, connections } as CanvasElement;
     case "Task":
       const t = data && typeof data === "object" ? data as { data?: string; checked?: boolean; Data?: string; Checked?: boolean } : {};
-      return { id, type: "Task", data: { data: t.data ?? t.Data ?? "New task", checked: !!t.checked && t.checked !== false }, position, size, connections } as CanvasElement;
+      return { id, type: "Task", data: { data: t.data ?? t.Data ?? "New task", checked: !!(t.checked ?? t.Checked ?? false) }, position, size, connections } as CanvasElement;
     case "Image":
       const img = data && typeof data === "object" ? data as { base64File?: string; Base64File?: string } : {};
       return { id, type: "Image", data: { base64File: img.base64File ?? img.Base64File ?? "" }, position, size, connections } as CanvasElement;

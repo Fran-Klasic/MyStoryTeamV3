@@ -1,11 +1,10 @@
 <script setup lang="ts">
 import { ref } from "vue";
-import { useRouter, useRoute } from "vue-router";
+import { useRoute } from "vue-router";
 import AuthCard from "@/components/auth/AuthCard.vue";
 import SignInForm from "@/components/auth/SignInForm.vue";
 import { useAuthStore } from "@/store/auth.store";
 
-const router = useRouter();
 const route = useRoute();
 const authStore = useAuthStore();
 const errorMessage = ref("");
