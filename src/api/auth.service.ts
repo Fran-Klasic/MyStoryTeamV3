@@ -1,24 +1,63 @@
+import { API_BASE_URL } from "@/config/api";
 import { api, setAccessToken, getAccessToken } from "./api-handler";
-import type { AuthResponse, Credentials, RegisterPayload, User } from "@/types/auth";
+import type { Credentials, RegisterPayload, User } from "@/types/auth";
 
-/** Login only via the real API; no demo or workaround. */
-export async function login(credentials: Credentials): Promise<AuthResponse> {
-  const res = await api<AuthResponse>("/api/auth/login", {
+async function postForToken(
+  path: string,
+  body: unknown,
+): Promise<string> {
+  const url = `${API_BASE_URL}${path}`;
+  const response = await fetch(url, {
     method: "POST",
-    body: credentials,
+    headers: {
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify(body),
   });
-  setAccessToken(res.accessToken);
-  return res;
+
+  if (!response.ok) {
+    const text = await response.text();
+    let detail: string;
+    try {
+      const json = JSON.parse(text);
+      // Try model state errors first: { errors: { Field: [\"msg\"] } }
+      if (json.errors && typeof json.errors === "object") {
+        const firstKey = Object.keys(json.errors)[0];
+        const firstMessages = firstKey ? json.errors[firstKey] : null;
+        if (Array.isArray(firstMessages) && firstMessages.length > 0) {
+          detail = firstMessages[0];
+        } else {
+          detail = json.title ?? json.message ?? json.error ?? text;
+        }
+      } else {
+        // Fallback: common fields the backend might use
+        detail = json.message ?? json.error ?? json.title ?? text;
+      }
+    } catch {
+      detail = text || response.statusText;
+    }
+    throw new Error(detail);
+  }
+
+  const token = (await response.text()).trim();
+  if (!token) {
+    throw new Error("Login response did not contain a token.");
+  }
+  return token;
 }
 
-/** Register only via the real API; no demo or workaround. */
-export async function register(payload: RegisterPayload): Promise<AuthResponse> {
-  const res = await api<AuthResponse>("/api/auth/register", {
-    method: "POST",
-    body: payload,
-  });
-  setAccessToken(res.accessToken);
-  return res;
+/** Login only via the real API; response body is a bare JWT string. */
+export async function login(credentials: Credentials): Promise<void> {
+  const token = await postForToken("/api/auth/login", credentials);
+  setAccessToken(token);
+}
+
+/** Register only via the real API; response body is a bare JWT string. */
+export async function register(
+  payload: RegisterPayload,
+): Promise<void> {
+  const token = await postForToken("/api/auth/register", payload);
+  setAccessToken(token);
 }
 
 export async function logout(): Promise<void> {

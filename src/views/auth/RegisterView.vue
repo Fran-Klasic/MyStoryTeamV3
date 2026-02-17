@@ -9,10 +9,16 @@ const router = useRouter();
 const authStore = useAuthStore();
 const errorMessage = ref("");
 
-async function handleSubmit(username: string, email: string, password: string) {
+async function handleSubmit(
+  username: string,
+  email: string,
+  password: string,
+  repeatPassword: string,
+) {
   errorMessage.value = "";
-  await authStore.register(username, email, password);
-  await router.push("/app/dashboard");
+  await authStore.register(username, email, password, repeatPassword);
+  // Force a full reload so all auth state and guards pick up the new token
+  window.location.href = "/app/dashboard";
 }
 
 function handleError(message: string) {

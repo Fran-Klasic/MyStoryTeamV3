@@ -7,8 +7,6 @@ export type User = {
 
 export type AuthResponse = {
   accessToken: string;
-  refreshToken?: string;
-  user: User;
 };
 
 export type Credentials = {
@@ -20,4 +18,5 @@ export type RegisterPayload = {
   username: string;
   email: string;
   password: string;
+  repeatPassword: string;
 };

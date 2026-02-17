@@ -17,11 +17,16 @@ const loading = ref(false);
 
 const emailError = computed(() => {
   if (!email.value.trim()) return "Email is required";
-  if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.value)) return "Enter a valid email";
+  if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.value))
+    return "Enter a valid email";
   return "";
 });
-const passwordError = computed(() => (password.value ? "" : "Password is required"));
-const canSubmit = computed(() => !loading.value && !emailError.value && !passwordError.value);
+const passwordError = computed(() =>
+  password.value ? "" : "Password is required",
+);
+const canSubmit = computed(
+  () => !loading.value && !emailError.value && !passwordError.value,
+);
 
 async function onSubmit() {
   if (!canSubmit.value) return;
@@ -69,7 +74,6 @@ async function onSubmit() {
     </div>
   </form>
 </template>
-
 
 <style scoped>
 .mst-sign-in-form__title {

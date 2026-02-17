@@ -7,10 +7,10 @@ import { useCanvasStore } from "@/store/canvas.store";
 const canvasStore = useCanvasStore();
 
 onMounted(async () => {
-  await canvasStore.loadCanvases();
+  await canvasStore.loadPublicCanvases();
 });
 
-const publicCanvases = computed(() => canvasStore.allCanvases.filter((c) => c.isPublic));
+const publicCanvases = computed(() => canvasStore.publicCanvases);
 </script>
 
 <template>

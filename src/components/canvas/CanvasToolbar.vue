@@ -1,6 +1,10 @@
 <script setup lang="ts">
 import type { CanvasElement } from "@/types/canvas/canvas-element";
 
+defineProps<{
+  readOnly?: boolean;
+}>();
+
 const ELEMENT_TYPES: { type: CanvasElement["type"]; label: string; icon: string }[] = [
   { type: "Text", label: "Text", icon: "T" },
   { type: "List", label: "List", icon: "≡" },
@@ -34,7 +38,7 @@ function onDragStart(type: CanvasElement["type"], event: DragEvent) {
 </script>
 
 <template>
-  <aside class="mst-canvas-toolbar">
+  <aside v-if="!readOnly" class="mst-canvas-toolbar">
     <button
       v-for="item in ELEMENT_TYPES"
       :key="item.type"

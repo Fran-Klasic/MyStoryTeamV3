@@ -12,6 +12,7 @@ const MIN_HEIGHT = 80;
 
 const props = defineProps<{
   elements: CanvasElement[];
+  readOnly?: boolean;
 }>();
 
 const emit = defineEmits<{
@@ -139,6 +140,7 @@ function onViewportMouseDown(event: MouseEvent) {
 
 function onDrop(event: DragEvent) {
   event.preventDefault();
+  if (props.readOnly) return;
   const type = event.dataTransfer?.getData("text/plain") as CanvasElement["type"] | undefined;
   if (!type) return;
   const { x, y } = screenToCanvas(event.clientX, event.clientY);
@@ -147,6 +149,7 @@ function onDrop(event: DragEvent) {
 
 function onElementMouseDown(id: ID, event: MouseEvent) {
   if (event.button !== 0) return;
+  if (props.readOnly) return;
   if (editingId.value === id) return;
   draggingId.value = id;
   lastX.value = event.clientX;
@@ -155,6 +158,7 @@ function onElementMouseDown(id: ID, event: MouseEvent) {
 
 function onResizeMouseDown(id: ID, event: MouseEvent) {
   if (event.button !== 0) return;
+  if (props.readOnly) return;
   event.preventDefault();
   resizingId.value = id;
   lastX.value = event.clientX;
@@ -243,6 +247,7 @@ function onMouseUp(event: MouseEvent) {
 
 function onConnectHandleMouseDown(id: ID, event: MouseEvent) {
   if (event.button !== 0) return;
+  if (props.readOnly) return;
   event.preventDefault();
   event.stopPropagation();
   connectFromId.value = id;
@@ -251,6 +256,7 @@ function onConnectHandleMouseDown(id: ID, event: MouseEvent) {
 }
 
 function onElementDblClick(id: ID) {
+  if (props.readOnly) return;
   editingId.value = id;
   editingWrapperRef.value = null;
   setTimeout(() => {
@@ -316,11 +322,15 @@ const draftLinePath = computed(() => {
 onMounted(() => {
   window.addEventListener("mouseup", onMouseUp);
   document.addEventListener("mousedown", onDocumentMouseDown, true);
+  const el = viewportRef.value;
+  if (el) el.addEventListener("wheel", onViewportWheel, { passive: false });
 });
 
 onBeforeUnmount(() => {
   window.removeEventListener("mouseup", onMouseUp);
   document.removeEventListener("mousedown", onDocumentMouseDown, true);
+  const el = viewportRef.value;
+  if (el) el.removeEventListener("wheel", onViewportWheel);
 });
 </script>
 
@@ -328,10 +338,12 @@ onBeforeUnmount(() => {
   <div
     ref="viewportRef"
     class="mst-canvas-viewport"
-    :class="{ 'mst-canvas-viewport--moving-resizing-connecting': isMovingResizingOrConnecting }"
+    :class="{
+      'mst-canvas-viewport--moving-resizing-connecting': isMovingResizingOrConnecting,
+      'mst-canvas-viewport--readonly': readOnly,
+    }"
     @mousedown="onViewportMouseDown"
     @mousemove="onMouseMove"
-    @wheel="onViewportWheel"
     @dragover.prevent
     @drop="onDrop"
   >
@@ -384,15 +396,18 @@ onBeforeUnmount(() => {
         @dblclick.stop="onElementDblClick(element.id)"
       >
         <div
+          v-if="!readOnly"
           class="mst-canvas-element__connect-handle"
           title="Drag to connect"
           @mousedown.stop="onConnectHandleMouseDown(element.id, $event)"
         />
         <div
+          v-if="!readOnly"
           class="mst-canvas-element__resize"
           @mousedown.stop.prevent="onResizeMouseDown(element.id, $event)"
         />
         <button
+          v-if="!readOnly"
           class="mst-canvas-element__delete"
           type="button"
           @click.stop="onDelete(element.id)"

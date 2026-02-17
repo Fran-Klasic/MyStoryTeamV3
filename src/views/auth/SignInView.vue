@@ -14,7 +14,8 @@ async function handleSubmit(email: string, password: string) {
   errorMessage.value = "";
   await authStore.login(email, password);
   const redirect = (route.query.redirect as string) || "/app/dashboard";
-  await router.push(redirect);
+  // Force a full reload so all auth state and guards pick up the new token
+  window.location.href = redirect;
 }
 
 function handleError(message: string) {

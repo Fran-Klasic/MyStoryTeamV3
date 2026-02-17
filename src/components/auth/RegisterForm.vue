@@ -4,7 +4,12 @@ import MstButton from "@/components/common/MstButton.vue";
 import MstInput from "@/components/common/MstInput.vue";
 
 const props = defineProps<{
-  onSubmitAuth?: (username: string, email: string, password: string) => Promise<void>;
+  onSubmitAuth?: (
+    username: string,
+    email: string,
+    password: string,
+    repeatPassword: string,
+  ) => Promise<void>;
 }>();
 
 const emit = defineEmits<{
@@ -17,19 +22,25 @@ const password = ref("");
 const confirmPassword = ref("");
 const loading = ref(false);
 
-const usernameError = computed(() => (username.value.trim() ? "" : "Username is required"));
+const usernameError = computed(() =>
+  username.value.trim() ? "" : "Username is required",
+);
 const emailError = computed(() => {
   if (!email.value.trim()) return "Email is required";
-  if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.value)) return "Enter a valid email";
+  if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.value))
+    return "Enter a valid email";
   return "";
 });
 const passwordError = computed(() => {
   if (!password.value) return "Password is required";
-  if (password.value.length < 6) return "Password must be at least 6 characters";
+  if (password.value.length < 6)
+    return "Password must be at least 6 characters";
   return "";
 });
 const confirmError = computed(() =>
-  password.value && password.value !== confirmPassword.value ? "Passwords do not match" : "",
+  password.value && password.value !== confirmPassword.value
+    ? "Passwords do not match"
+    : "",
 );
 const canSubmit = computed(
   () =>
@@ -45,7 +56,13 @@ async function onSubmit() {
   const handler = props.onSubmitAuth;
   loading.value = true;
   try {
-    if (handler) await handler(username.value.trim(), email.value.trim(), password.value);
+    if (handler)
+      await handler(
+        username.value.trim(),
+        email.value.trim(),
+        password.value,
+        confirmPassword.value,
+      );
     else emit("error", "No submit handler");
   } catch (err) {
     emit("error", err instanceof Error ? err.message : "Registration failed");
@@ -58,13 +75,15 @@ async function onSubmit() {
 <template>
   <form class="mst-register-form" @submit.prevent="onSubmit">
     <h2 class="mst-register-form__title">Create account</h2>
-    <p class="mst-register-form__subtitle">Join My Story Team to start planning.</p>
+    <p class="mst-register-form__subtitle">
+      Join My Story Team to start planning.
+    </p>
     <div class="mst-register-form__fields">
       <MstInput
         v-model="username"
         type="text"
         label="Username"
-        placeholder="johndoe"
+        placeholder="John Doe"
         autocomplete="username"
         :error="usernameError"
         :disabled="loading"

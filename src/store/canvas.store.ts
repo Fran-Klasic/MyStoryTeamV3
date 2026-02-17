@@ -3,20 +3,21 @@ import { ref, computed } from "vue";
 import * as canvasService from "@/api/canvas.service";
 import type { CanvasMeta } from "@/types/canvas-meta";
 import type { CanvasElement } from "@/types/canvas/canvas-element";
+import { useAuthStore } from "@/store/auth.store";
 
 export const useCanvasStore = defineStore("canvas", () => {
   const allCanvases = ref<CanvasMeta[]>([]);
-  const favoriteIds = ref<Set<string>>(new Set(["c-demo-1", "c-demo-3"]));
-  const recentIds = ref<string[]>(["c-demo-1", "c-demo-2", "c-demo-3"]);
+  const publicCanvases = ref<CanvasMeta[]>([]);
+  const favoriteIds = ref<Set<string>>(new Set());
+  const recentIds = ref<string[]>([]);
   const currentCanvas = ref<{ meta: CanvasMeta; elements: CanvasElement[] } | null>(null);
 
-  const favoriteCanvases = computed(() =>
-    allCanvases.value
-      .filter((c) => favoriteIds.value.has(c.id))
-      .map((c) => ({ ...c, isFavorite: true })),
-  );
   const myCanvases = computed(() =>
     allCanvases.value.map((c) => ({ ...c, isFavorite: favoriteIds.value.has(c.id) })),
+  );
+  /** Same canvases as My Canvases, but only those marked favorite */
+  const favoriteCanvases = computed(() =>
+    myCanvases.value.filter((c) => c.isFavorite),
   );
   const recentCanvases = computed(() => {
     const byId = new Map(allCanvases.value.map((c) => [c.id, c]));
@@ -28,6 +29,14 @@ export const useCanvasStore = defineStore("canvas", () => {
 
   async function loadCanvases() {
     allCanvases.value = await canvasService.getCanvases();
+    // Sync favorite state from API so Favorites shows the same list as My Canvases (filtered)
+    favoriteIds.value = new Set(
+      allCanvases.value.filter((c) => c.isFavorite).map((c) => c.id),
+    );
+  }
+
+  async function loadPublicCanvases() {
+    publicCanvases.value = await canvasService.getPublicCanvases();
   }
 
   async function loadCanvas(id: string) {
@@ -42,7 +51,12 @@ export const useCanvasStore = defineStore("canvas", () => {
   }
 
   async function createCanvas(name: string) {
-    const meta = await canvasService.createCanvas(name);
+    currentCanvas.value = null;
+    let meta = await canvasService.createCanvas(name);
+    const authStore = useAuthStore();
+    if (authStore.user?.id) {
+      meta = { ...meta, owner: authStore.user.id };
+    }
     allCanvases.value = [meta, ...allCanvases.value];
     currentCanvas.value = { meta, elements: [] };
     return meta;
@@ -82,6 +96,7 @@ export const useCanvasStore = defineStore("canvas", () => {
 
   return {
     allCanvases,
+    publicCanvases,
     favoriteIds,
     recentIds,
     currentCanvas,
@@ -89,6 +104,7 @@ export const useCanvasStore = defineStore("canvas", () => {
     myCanvases,
     recentCanvases,
     loadCanvases,
+    loadPublicCanvases,
     loadCanvas,
     createCanvas,
     saveCurrentCanvas,
