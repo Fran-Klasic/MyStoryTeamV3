@@ -45,8 +45,13 @@ function logout() {
         <RouterLink to="/" class="mst-app-sidebar__nav-item" @click="closeSidebar">
           Home
         </RouterLink>
-        <RouterLink to="/app/profile" class="mst-app-sidebar__nav-item" @click="closeSidebar">
-          User
+        <RouterLink
+          to="/app/profile"
+          class="mst-app-sidebar__nav-item"
+          :title="authStore.user?.username ? `Profile: ${authStore.user.username}` : 'Profile'"
+          @click="closeSidebar"
+        >
+          <span class="mst-app-sidebar__user-label">{{ authStore.user?.username ?? "User" }}</span>
         </RouterLink>
         <RouterLink to="/app/browse" class="mst-app-sidebar__nav-item" @click="closeSidebar">
           Browse
@@ -143,6 +148,11 @@ function logout() {
   transform: translateX(2px);
 }
 
+.mst-app-sidebar__user-label {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
 .mst-app-sidebar__nav-item--btn {
   margin-top: auto;
   border: none;

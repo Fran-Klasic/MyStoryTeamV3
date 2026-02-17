@@ -7,6 +7,7 @@ export type CanvasMeta = {
   updatedAt: string;
   createdAt?: string;
   previewImage?: string;
+  backgroundColor?: string;
   stats?: {
     elementsCount?: number;
     lastOpenedAt?: string;

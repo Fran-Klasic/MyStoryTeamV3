@@ -1,29 +1,11 @@
 import { api } from "./api-handler";
 import type { User } from "@/types/auth";
 
-export type UserStats = {
-  completedTasks: number;
-  streaks: number;
-  timePlannedMinutes: number;
-};
-
 export async function getProfile(): Promise<User> {
   try {
-    return await api<User>("/user/profile", { method: "GET" });
+    return await api<User>("/api/auth/user", { method: "GET" });
   } catch {
     return getMockProfile();
-  }
-}
-
-export async function getStats(): Promise<UserStats> {
-  try {
-    return await api<UserStats>("/user/stats", { method: "GET" });
-  } catch {
-    return {
-      completedTasks: 42,
-      streaks: 7,
-      timePlannedMinutes: 1200,
-    };
   }
 }
 

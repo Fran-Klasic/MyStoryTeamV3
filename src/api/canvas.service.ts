@@ -198,6 +198,7 @@ function mapBackendSummaryToMeta(c: BackendCanvasSummary): CanvasMeta {
     createdAt,
     updatedAt,
     previewImage: bgImage,
+    backgroundColor: bgColor,
     stats: { elementsCount: undefined, lastOpenedAt: undefined },
   } as CanvasMeta;
 }
@@ -236,7 +237,7 @@ export async function getCanvas(
       typeof bgImageRaw === "string" && bgImageRaw.trim().length === 0
         ? undefined
         : bgImageRaw ?? undefined;
-    const _bgColor =
+    const bgColor =
       typeof bgColorRaw === "string" && bgColorRaw.trim().length === 0
         ? undefined
         : bgColorRaw ?? undefined;
@@ -250,6 +251,7 @@ export async function getCanvas(
       createdAt,
       updatedAt,
       previewImage: bgImage,
+      backgroundColor: bgColor,
       stats: {},
     };
 
@@ -298,7 +300,7 @@ export async function saveCanvas(
       Visibility: meta.isPublic,
       Favorite: meta.isFavorite,
       Background_Image: meta.previewImage ?? null,
-      Background_Color: null,
+      Background_Color: meta.backgroundColor ?? null,
     };
     const updatedId = await api<number>("/api/auth/canvas", {
       method: "PUT",

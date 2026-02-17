@@ -13,6 +13,8 @@ const MIN_HEIGHT = 80;
 const props = defineProps<{
   elements: CanvasElement[];
   readOnly?: boolean;
+  backgroundImage?: string | null;
+  backgroundColor?: string | null;
 }>();
 
 const emit = defineEmits<{
@@ -347,7 +349,17 @@ onBeforeUnmount(() => {
     @dragover.prevent
     @drop="onDrop"
   >
-    <div class="mst-canvas-inner" :style="{ transform: transformStyle }">
+    <div
+      class="mst-canvas-inner"
+      :style="{
+        transform: transformStyle,
+        backgroundColor: props.backgroundColor ?? undefined,
+        backgroundImage: props.backgroundImage ? `url(${props.backgroundImage})` : undefined,
+        backgroundSize: props.backgroundImage ? '100% 100%' : undefined,
+        backgroundPosition: props.backgroundImage ? '0 0' : undefined,
+        backgroundRepeat: props.backgroundImage ? 'no-repeat' : undefined,
+      }"
+    >
       <CanvasGrid />
       <svg class="mst-canvas-connections" :width="CANVAS_WIDTH" :height="CANVAS_HEIGHT">
         <defs>

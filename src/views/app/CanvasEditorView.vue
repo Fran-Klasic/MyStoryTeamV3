@@ -5,6 +5,7 @@ import CanvasViewport from "@/components/canvas/CanvasViewport.vue";
 import CanvasToolbar from "@/components/canvas/CanvasToolbar.vue";
 import CanvasOptionsPanel from "@/components/canvas/CanvasOptionsPanel.vue";
 import type { CanvasElement } from "@/types/canvas/canvas-element";
+import type { CanvasMeta } from "@/types/canvas-meta";
 import { useCanvasStore } from "@/store/canvas.store";
 import { useAuthStore } from "@/store/auth.store";
 import { useCanvasElements } from "@/composables/useCanvasElements";
@@ -142,7 +143,7 @@ function handleAdd(payload: { type: CanvasElement["type"]; x: number; y: number 
   addElement(payload.type, payload.x, payload.y);
 }
 
-function handleUpdateMeta(meta: Partial<{ name: string; isFavorite: boolean; isPublic: boolean }>) {
+function handleUpdateMeta(meta: Partial<CanvasMeta>) {
   if (readOnly.value) return;
   canvasStore.setCurrentMeta(meta);
 }
@@ -150,6 +151,13 @@ function handleUpdateMeta(meta: Partial<{ name: string; isFavorite: boolean; isP
 function handleSave() {
   if (readOnly.value) return;
   canvasStore.saveCurrentCanvas();
+}
+
+async function handleDeleteCanvas() {
+  const meta = canvasStore.currentCanvas?.meta;
+  if (!meta?.id) return;
+  await canvasStore.deleteCanvas(meta.id);
+  router.replace({ name: "dashboard" });
 }
 
 </script>
@@ -164,6 +172,8 @@ function handleSave() {
       <CanvasViewport
         :elements="elements"
         :read-only="readOnly"
+        :background-image="currentMeta?.previewImage ?? null"
+        :background-color="currentMeta?.backgroundColor ?? null"
         @move="handleMove"
         @resize="handleResize"
         @edit="handleEdit"
@@ -178,7 +188,13 @@ function handleSave() {
         @add="handleAdd"
       />
     </div>
-    <CanvasOptionsPanel :meta="currentMeta" :read-only="readOnly" @update:meta="handleUpdateMeta" @save="handleSave" />
+    <CanvasOptionsPanel
+      :meta="currentMeta"
+      :read-only="readOnly"
+      @update:meta="handleUpdateMeta"
+      @save="handleSave"
+      @delete="handleDeleteCanvas"
+    />
   </div>
 </template>
 

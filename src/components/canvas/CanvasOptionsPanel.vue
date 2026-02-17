@@ -10,11 +10,13 @@ const props = defineProps<{
 const emit = defineEmits<{
   (e: "update:meta", meta: Partial<CanvasMeta>): void;
   (e: "save"): void;
+  (e: "delete"): void;
 }>();
 
 const name = ref("");
 const isFavorite = ref(false);
 const isPublic = ref(false);
+const backgroundColor = ref("#ffffff");
 
 watch(
   () => props.meta,
@@ -23,6 +25,7 @@ watch(
       name.value = m.name ?? "";
       isFavorite.value = !!m.isFavorite;
       isPublic.value = !!m.isPublic;
+      backgroundColor.value = m.backgroundColor ?? "#ffffff";
     }
   },
   { immediate: true },
@@ -48,6 +51,31 @@ function onPublicChange(event: Event) {
 function onSave() {
   updateName();
   emit("save");
+}
+
+function onBackgroundImageChange(event: Event) {
+  const input = event.target as HTMLInputElement;
+  const file = input.files?.[0];
+  if (!file || !file.type.startsWith("image/")) return;
+  const reader = new FileReader();
+  reader.onload = () => {
+    const base64 = reader.result as string;
+    emit("update:meta", { previewImage: base64 });
+  };
+  reader.readAsDataURL(file);
+  input.value = "";
+}
+
+function onBackgroundColorChange(event: Event) {
+  const target = event.target as HTMLInputElement;
+  backgroundColor.value = target.value;
+  emit("update:meta", { backgroundColor: target.value });
+}
+
+function onDelete() {
+  if (confirm("Delete this canvas? This cannot be undone.")) {
+    emit("delete");
+  }
 }
 </script>
 
@@ -90,12 +118,53 @@ function onSave() {
         </label>
       </div>
       <div class="mst-canvas-options__group">
+        <label class="mst-canvas-options__label">Background image</label>
+        <div class="mst-canvas-options__image-row">
+          <label class="mst-canvas-options__file-trigger">
+            <input
+              type="file"
+              accept="image/*"
+              class="mst-canvas-options__file"
+              @change="onBackgroundImageChange"
+            />
+            <span class="mst-canvas-options__file-text">Choose image</span>
+          </label>
+          <img
+            v-if="meta?.previewImage"
+            :src="meta.previewImage"
+            alt="Preview"
+            class="mst-canvas-options__preview"
+          />
+        </div>
+      </div>
+      <div class="mst-canvas-options__group">
+        <label class="mst-canvas-options__label">Background color</label>
+        <div class="mst-canvas-options__color-row">
+          <input
+            v-model="backgroundColor"
+            type="color"
+            class="mst-canvas-options__color"
+            @input="onBackgroundColorChange"
+          />
+          <span class="mst-canvas-options__color-value">{{ backgroundColor }}</span>
+        </div>
+      </div>
+      <div class="mst-canvas-options__group">
         <button
           type="button"
           class="mst-canvas-options__save"
           @click="onSave"
         >
           Save
+        </button>
+      </div>
+      <div class="mst-canvas-options__group">
+        <button
+          type="button"
+          class="mst-canvas-options__delete"
+          @click="onDelete"
+        >
+          Delete canvas
         </button>
       </div>
       <p class="mst-canvas-options__hint">Changes are saved only when you click Save.</p>
@@ -105,13 +174,13 @@ function onSave() {
 
 <style scoped>
 .mst-canvas-options {
-  width: 260px;
+  width: 280px;
   flex-shrink: 0;
-  padding: 1rem;
-  background: rgba(255, 255, 255, 0.95);
+  padding: 1.25rem;
+  background: rgba(255, 255, 255, 0.98);
   border-radius: var(--mst-radius-md);
-  border: 1px solid rgba(58, 167, 196, 0.4);
-  box-shadow: var(--mst-shadow-soft);
+  border: 1px solid rgba(58, 167, 196, 0.35);
+  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.06);
 }
 .mst-canvas-options__title {
   margin: 0 0 1rem;
@@ -120,7 +189,10 @@ function onSave() {
   color: var(--mst-color-text);
 }
 .mst-canvas-options__group {
-  margin-bottom: 1rem;
+  margin-bottom: 1.25rem;
+}
+.mst-canvas-options__group:last-of-type {
+  margin-bottom: 0;
 }
 .mst-canvas-options__label {
   display: block;
@@ -136,6 +208,10 @@ function onSave() {
   border-radius: var(--mst-radius-sm);
   font-size: var(--mst-font-size-sm);
   outline: none;
+  transition: border-color 0.15s;
+}
+.mst-canvas-options__input:focus {
+  border-color: var(--mst-color-accent);
 }
 .mst-canvas-options__row {
   display: flex;
@@ -165,6 +241,83 @@ function onSave() {
   filter: brightness(1.05);
 }
 .mst-canvas-options__save:active {
+  filter: brightness(0.95);
+}
+.mst-canvas-options__file {
+  position: absolute;
+  width: 0;
+  height: 0;
+  opacity: 0;
+  overflow: hidden;
+  pointer-events: none;
+}
+.mst-canvas-options__file-trigger {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  padding: 0.5rem 0.75rem;
+  font-size: var(--mst-font-size-sm);
+  font-weight: 500;
+  color: var(--mst-color-accent);
+  background: rgba(58, 167, 196, 0.12);
+  border: 1px dashed rgba(58, 167, 196, 0.5);
+  border-radius: var(--mst-radius-sm);
+  cursor: pointer;
+  transition: background 0.15s, border-color 0.15s;
+}
+.mst-canvas-options__file-trigger:hover {
+  background: rgba(58, 167, 196, 0.18);
+  border-color: rgba(58, 167, 196, 0.7);
+}
+.mst-canvas-options__file-text {
+  pointer-events: none;
+}
+.mst-canvas-options__image-row {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+.mst-canvas-options__preview {
+  width: 100%;
+  max-height: 80px;
+  object-fit: contain;
+  border-radius: var(--mst-radius-sm);
+  border: 1px solid rgba(58, 167, 196, 0.4);
+}
+.mst-canvas-options__color-row {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+.mst-canvas-options__color {
+  width: 2.5rem;
+  height: 2rem;
+  padding: 0;
+  border: 1px solid rgba(58, 167, 196, 0.5);
+  border-radius: var(--mst-radius-sm);
+  cursor: pointer;
+  background: none;
+}
+.mst-canvas-options__color-value {
+  font-size: var(--mst-font-size-xs);
+  color: var(--mst-color-text-soft);
+}
+.mst-canvas-options__delete {
+  width: 100%;
+  padding: 0.5rem 0.75rem;
+  font-size: var(--mst-font-size-sm);
+  font-weight: 600;
+  color: white;
+  background: #dc2626;
+  border: none;
+  border-radius: var(--mst-radius-sm);
+  cursor: pointer;
+}
+.mst-canvas-options__delete:hover {
+  filter: brightness(1.05);
+}
+.mst-canvas-options__delete:active {
   filter: brightness(0.95);
 }
 .mst-canvas-options__hint {

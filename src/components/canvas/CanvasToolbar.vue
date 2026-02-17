@@ -6,13 +6,13 @@ defineProps<{
 }>();
 
 const ELEMENT_TYPES: { type: CanvasElement["type"]; label: string; icon: string }[] = [
-  { type: "Text", label: "Text", icon: "T" },
-  { type: "List", label: "List", icon: "≡" },
-  { type: "Task", label: "Task", icon: "☐" },
-  { type: "Image", label: "Image", icon: "🖼" },
-  { type: "Audio", label: "Audio", icon: "♪" },
-  { type: "Video", label: "Video", icon: "▶" },
-  { type: "Date", label: "Date", icon: "📅" },
+  { type: "Text", label: "Text", icon: "/assets/icons/text-icon.svg" },
+  { type: "List", label: "List", icon: "/assets/icons/list-icon.svg" },
+  { type: "Task", label: "Task", icon: "/assets/icons/task-icon.svg" },
+  { type: "Image", label: "Image", icon: "/assets/icons/image-icon.svg" },
+  { type: "Audio", label: "Audio", icon: "/assets/icons/audio-icon.svg" },
+  { type: "Video", label: "Video", icon: "/assets/icons/video-icon.svg" },
+  { type: "Date", label: "Date", icon: "/assets/icons/date-icon.svg" },
 ];
 
 function onDragStart(type: CanvasElement["type"], event: DragEvent) {
@@ -47,7 +47,7 @@ function onDragStart(type: CanvasElement["type"], event: DragEvent) {
       type="button"
       @dragstart="onDragStart(item.type, $event)"
     >
-      <span class="mst-canvas-toolbar__icon">{{ item.icon }}</span>
+      <img :src="item.icon" :alt="item.label" class="mst-canvas-toolbar__icon" />
       <span class="mst-canvas-toolbar__label">{{ item.label }}</span>
     </button>
   </aside>
@@ -95,8 +95,10 @@ function onDragStart(type: CanvasElement["type"], event: DragEvent) {
 }
 
 .mst-canvas-toolbar__icon {
-  font-size: 1rem;
-  line-height: 1;
+  width: 1.25rem;
+  height: 1.25rem;
+  object-fit: contain;
+  filter: invert(1);
 }
 
 .mst-canvas-toolbar__label {

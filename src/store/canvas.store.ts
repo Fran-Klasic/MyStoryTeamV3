@@ -94,6 +94,16 @@ export const useCanvasStore = defineStore("canvas", () => {
     currentCanvas.value = null;
   }
 
+  async function deleteCanvas(id: string) {
+    await canvasService.deleteCanvas(id);
+    allCanvases.value = allCanvases.value.filter((c) => c.id !== id);
+    publicCanvases.value = publicCanvases.value.filter((c) => c.id !== id);
+    recentIds.value = recentIds.value.filter((rid) => rid !== id);
+    if (currentCanvas.value?.meta?.id === id) {
+      currentCanvas.value = null;
+    }
+  }
+
   return {
     allCanvases,
     publicCanvases,
@@ -112,5 +122,6 @@ export const useCanvasStore = defineStore("canvas", () => {
     setCurrentMeta,
     toggleFavorite,
     clearCurrentCanvas,
+    deleteCanvas,
   };
 });
