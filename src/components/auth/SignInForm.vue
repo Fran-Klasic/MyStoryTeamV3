@@ -48,6 +48,7 @@ async function onSubmit() {
         type="email"
         label="Email"
         placeholder="you@example.com"
+        autocomplete="email"
         :error="emailError"
         :disabled="loading"
       />
@@ -56,6 +57,7 @@ async function onSubmit() {
         type="password"
         label="Password"
         placeholder="••••••••"
+        autocomplete="current-password"
         :error="passwordError"
         :disabled="loading"
       />

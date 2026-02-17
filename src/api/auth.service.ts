@@ -1,66 +1,33 @@
-import { getApiBaseUrl } from "@/config/api";
 import { api, setAccessToken, getAccessToken } from "./api-handler";
 import type { AuthResponse, Credentials, RegisterPayload, User } from "@/types/auth";
 
-const DEMO_TOKEN = "demo-access-token";
-
-function demoUser(email: string): AuthResponse {
-  const id = "demo-" + Math.random().toString(36).slice(2, 9);
-  return {
-    accessToken: DEMO_TOKEN,
-    user: {
-      id,
-      username: email.split("@")[0] || "User",
-      email,
-    },
-  };
-}
-
+/** Login only via the real API; no demo or workaround. */
 export async function login(credentials: Credentials): Promise<AuthResponse> {
-  try {
-    const res = await api<AuthResponse>("/api/auth/login", {
-      method: "POST",
-      body: credentials,
-    });
-    setAccessToken(res.accessToken);
-    return res;
-  } catch (err) {
-    if (!getApiBaseUrl()) {
-      const res = demoUser(credentials.email);
-      setAccessToken(res.accessToken);
-      return res;
-    }
-    throw err;
-  }
+  const res = await api<AuthResponse>("/api/auth/login", {
+    method: "POST",
+    body: credentials,
+  });
+  setAccessToken(res.accessToken);
+  return res;
 }
 
+/** Register only via the real API; no demo or workaround. */
 export async function register(payload: RegisterPayload): Promise<AuthResponse> {
-  try {
-    const res = await api<AuthResponse>("/api/auth/register", {
-      method: "POST",
-      body: payload,
-    });
-    setAccessToken(res.accessToken);
-    return res;
-  } catch (err) {
-    if (!getApiBaseUrl()) {
-      const res = demoUser(payload.email);
-      setAccessToken(res.accessToken);
-      return res;
-    }
-    throw err;
-  }
+  const res = await api<AuthResponse>("/api/auth/register", {
+    method: "POST",
+    body: payload,
+  });
+  setAccessToken(res.accessToken);
+  return res;
 }
 
 export async function logout(): Promise<void> {
   setAccessToken(null);
 }
 
+/** Validate token with API; clear and return null on 401/invalid. */
 export async function refreshUser(): Promise<User | null> {
-  const token = getAccessToken();
-  if (token === DEMO_TOKEN) {
-    return { id: "demo", username: "Demo User", email: "demo@example.com" };
-  }
+  if (!getAccessToken()) return null;
   try {
     const user = await api<User>("/api/auth/user", { method: "GET" });
     return user;
@@ -68,8 +35,4 @@ export async function refreshUser(): Promise<User | null> {
     setAccessToken(null);
     return null;
   }
-}
-
-export function isDemoToken(): boolean {
-  return getAccessToken() === DEMO_TOKEN;
 }

@@ -6,6 +6,7 @@ defineProps<{
   error?: string;
   placeholder?: string;
   disabled?: boolean;
+  autocomplete?: string;
 }>();
 
 const emit = defineEmits<{
@@ -22,6 +23,7 @@ const emit = defineEmits<{
     :value="modelValue"
     :placeholder="placeholder"
     :disabled="disabled"
+    :autocomplete="autocomplete"
     @input="emit('update:modelValue', ($event.target as HTMLInputElement).value)"
   />
   <p v-if="error" class="mst-input__error">{{ error }}</p>
