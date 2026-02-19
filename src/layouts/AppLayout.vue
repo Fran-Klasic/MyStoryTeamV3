@@ -148,6 +148,12 @@ function logout() {
   transform: translateX(2px);
 }
 
+.mst-app-sidebar__nav-item.router-link-exact-active {
+  background-color: rgba(255, 255, 255, 0.14);
+  font-weight: 600;
+  box-shadow: inset 3px 0 0 var(--mst-color-accent);
+}
+
 .mst-app-sidebar__user-label {
   overflow: hidden;
   text-overflow: ellipsis;

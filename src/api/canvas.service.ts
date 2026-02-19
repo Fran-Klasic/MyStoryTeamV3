@@ -35,12 +35,16 @@ function normalizeCanvasElement(raw: unknown): CanvasElement | null {
   const sx = sz?.x ?? sz?.X ?? 220;
   const sy = sz?.y ?? sz?.Y ?? 100;
 
-  const connRaw = (o.connections ?? o.Connections) as Array<{ self?: string; target?: string; Self?: string; Target?: string }> | undefined;
+  const connRaw = (o.connections ?? o.Connections) as
+    | Array<{ self?: string; target?: string; Self?: string; Target?: string }>
+    | undefined;
   const connections: Connection[] = Array.isArray(connRaw)
-    ? connRaw.map((c) => ({
-        self: String(c.self ?? c.Self ?? ""),
-        target: String(c.target ?? c.Target ?? ""),
-      })).filter((c) => c.self && c.target)
+    ? connRaw
+        .map((c) => ({
+          self: String(c.self ?? c.Self ?? ""),
+          target: String(c.target ?? c.Target ?? ""),
+        }))
+        .filter((c) => c.self && c.target)
     : [];
 
   const data = o.data ?? o.Data;
@@ -49,29 +53,117 @@ function normalizeCanvasElement(raw: unknown): CanvasElement | null {
 
   switch (type) {
     case "Text":
-      return { id, type: "Text", data: typeof data === "string" ? data : "New note", position, size, connections } as CanvasElement;
+      return {
+        id,
+        type: "Text",
+        data: typeof data === "string" ? data : "New note",
+        position,
+        size,
+        connections,
+      } as CanvasElement;
     case "List":
-      const listData = data && typeof data === "object" && "listData" in data
-        ? (data as { listData?: string[] }).listData
-        : (data as { ListData?: string[] })?.ListData;
-      return { id, type: "List", data: { listData: Array.isArray(listData) ? listData : ["Item 1"] }, position, size, connections } as CanvasElement;
+      const listData =
+        data && typeof data === "object" && "listData" in data
+          ? (data as { listData?: string[] }).listData
+          : (data as { ListData?: string[] })?.ListData;
+      return {
+        id,
+        type: "List",
+        data: { listData: Array.isArray(listData) ? listData : ["Item 1"] },
+        position,
+        size,
+        connections,
+      } as CanvasElement;
     case "Task":
-      const t = data && typeof data === "object" ? data as { data?: string; checked?: boolean; Data?: string; Checked?: boolean } : {};
-      return { id, type: "Task", data: { data: t.data ?? t.Data ?? "New task", checked: !!(t.checked ?? t.Checked ?? false) }, position, size, connections } as CanvasElement;
+      const t =
+        data && typeof data === "object"
+          ? (data as {
+              data?: string;
+              checked?: boolean;
+              Data?: string;
+              Checked?: boolean;
+            })
+          : {};
+      return {
+        id,
+        type: "Task",
+        data: {
+          data: t.data ?? t.Data ?? "New task",
+          checked: !!(t.checked ?? t.Checked ?? false),
+        },
+        position,
+        size,
+        connections,
+      } as CanvasElement;
     case "Image":
-      const img = data && typeof data === "object" ? data as { base64File?: string; Base64File?: string } : {};
-      return { id, type: "Image", data: { base64File: img.base64File ?? img.Base64File ?? "" }, position, size, connections } as CanvasElement;
+      const img =
+        data && typeof data === "object"
+          ? (data as { base64File?: string; Base64File?: string })
+          : {};
+      return {
+        id,
+        type: "Image",
+        data: { base64File: img.base64File ?? img.Base64File ?? "" },
+        position,
+        size,
+        connections,
+      } as CanvasElement;
     case "Audio":
-      const aud = data && typeof data === "object" ? data as { base64File?: string; Base64File?: string } : {};
-      return { id, type: "Audio", data: { base64File: aud.base64File ?? aud.Base64File ?? "" }, position, size, connections } as CanvasElement;
+      const aud =
+        data && typeof data === "object"
+          ? (data as { base64File?: string; Base64File?: string })
+          : {};
+      return {
+        id,
+        type: "Audio",
+        data: { base64File: aud.base64File ?? aud.Base64File ?? "" },
+        position,
+        size,
+        connections,
+      } as CanvasElement;
     case "Video":
-      const v = data && typeof data === "object" ? data as { url?: string; Url?: string } : {};
-      return { id, type: "Video", data: { url: v.url ?? v.Url ?? "" }, position, size, connections } as CanvasElement;
+      const v =
+        data && typeof data === "object"
+          ? (data as { url?: string; Url?: string })
+          : {};
+      return {
+        id,
+        type: "Video",
+        data: { url: v.url ?? v.Url ?? "" },
+        position,
+        size,
+        connections,
+      } as CanvasElement;
     case "Date":
-      const d = data && typeof data === "object" ? data as { date?: string; data?: string; Date?: string; Data?: string } : {};
-      return { id, type: "Date", data: { date: d.date ?? d.Date ?? new Date().toISOString().slice(0, 10), data: d.data ?? d.Data ?? "Goal" }, position, size, connections } as CanvasElement;
+      const d =
+        data && typeof data === "object"
+          ? (data as {
+              date?: string;
+              data?: string;
+              Date?: string;
+              Data?: string;
+            })
+          : {};
+      return {
+        id,
+        type: "Date",
+        data: {
+          date: d.date ?? d.Date ?? new Date().toISOString().slice(0, 10),
+          data: d.data ?? d.Data ?? "Goal",
+        },
+        position,
+        size,
+        connections,
+      } as CanvasElement;
     default:
-      return { id, type: "Text", data: typeof data === "string" ? data : "New note", position, size, connections } as CanvasElement;
+      return {
+        id,
+        type: "Text",
+        data: typeof data === "string" ? data : "New note",
+        position,
+        size,
+        connections,
+      } as CanvasElement;
   }
 }
 
@@ -97,6 +189,8 @@ type BackendCanvasSummary = {
   iD_Canvas?: number;
   ID_User?: number;
   iD_User?: number;
+  Username?: string | null;
+  username?: string | null;
   Canvas_Name?: string | null;
   canvas_Name?: string | null;
   Created_At?: string;
@@ -118,6 +212,8 @@ type BackendCanvasDetails = {
   iD_Canvas?: number;
   ID_User?: number;
   iD_User?: number;
+  Username?: string | null;
+  username?: string | null;
   Canvas_Name?: string | null;
   canvas_Name?: string | null;
   Created_At?: string;
@@ -174,6 +270,11 @@ export async function getCanvases(): Promise<CanvasMeta[]> {
 function mapBackendSummaryToMeta(c: BackendCanvasSummary): CanvasMeta {
   const id = c.ID_Canvas ?? c.iD_Canvas;
   const ownerId = c.ID_User ?? c.iD_User;
+  const ownerUsernameRaw = c.Username ?? c.username;
+  const ownerUsername =
+    typeof ownerUsernameRaw === "string" && ownerUsernameRaw.trim().length > 0
+      ? ownerUsernameRaw.trim()
+      : undefined;
   const name = (c.Canvas_Name ?? c.canvas_Name) || "Untitled";
   const createdAt = c.Created_At ?? c.created_At ?? new Date().toISOString();
   const updatedAt = c.Updated_At ?? c.updated_At ?? createdAt;
@@ -184,15 +285,16 @@ function mapBackendSummaryToMeta(c: BackendCanvasSummary): CanvasMeta {
   const bgImage =
     typeof bgImageRaw === "string" && bgImageRaw.trim().length === 0
       ? undefined
-      : bgImageRaw ?? undefined;
+      : (bgImageRaw ?? undefined);
   const bgColor =
     typeof bgColorRaw === "string" && bgColorRaw.trim().length === 0
       ? undefined
-      : bgColorRaw ?? undefined;
+      : (bgColorRaw ?? undefined);
   return {
     id: String(id),
     name,
     owner: ownerId != null ? String(ownerId) : undefined,
+    ownerUsername,
     isFavorite: !!isFavorite,
     isPublic: !!isPublic,
     createdAt,
@@ -205,9 +307,12 @@ function mapBackendSummaryToMeta(c: BackendCanvasSummary): CanvasMeta {
 
 export async function getPublicCanvases(): Promise<CanvasMeta[]> {
   try {
-    const backend = await api<BackendCanvasSummary[]>("/api/auth/canvas/public", {
-      method: "GET",
-    });
+    const backend = await api<BackendCanvasSummary[]>(
+      "/api/auth/canvas/public",
+      {
+        method: "GET",
+      },
+    );
     return backend.map(mapBackendSummaryToMeta);
   } catch {
     return [];
@@ -224,28 +329,36 @@ export async function getCanvas(
 
     const backendId = backend.ID_Canvas ?? backend.iD_Canvas ?? Number(id);
     const ownerId = backend.ID_User ?? backend.iD_User;
+    const ownerUsernameRaw = backend.Username ?? backend.username;
+    const ownerUsername =
+      typeof ownerUsernameRaw === "string" && ownerUsernameRaw.trim().length > 0
+        ? ownerUsernameRaw.trim()
+        : undefined;
     const name = (backend.Canvas_Name ?? backend.canvas_Name) || "Untitled";
-    const createdAt = backend.Created_At ?? backend.created_At ?? new Date().toISOString();
-    const updatedAt =
-      backend.Updated_At ?? backend.updated_At ?? createdAt;
+    const createdAt =
+      backend.Created_At ?? backend.created_At ?? new Date().toISOString();
+    const updatedAt = backend.Updated_At ?? backend.updated_At ?? createdAt;
     const isPublic = backend.Visibility ?? backend.visibility ?? false;
     const isFavorite = backend.Favorite ?? backend.favorite ?? false;
 
-    const bgImageRaw = backend.Background_Image ?? backend.background_Image ?? undefined;
-    const bgColorRaw = backend.Background_Color ?? backend.background_Color ?? undefined;
+    const bgImageRaw =
+      backend.Background_Image ?? backend.background_Image ?? undefined;
+    const bgColorRaw =
+      backend.Background_Color ?? backend.background_Color ?? undefined;
     const bgImage =
       typeof bgImageRaw === "string" && bgImageRaw.trim().length === 0
         ? undefined
-        : bgImageRaw ?? undefined;
+        : (bgImageRaw ?? undefined);
     const bgColor =
       typeof bgColorRaw === "string" && bgColorRaw.trim().length === 0
         ? undefined
-        : bgColorRaw ?? undefined;
+        : (bgColorRaw ?? undefined);
 
     const meta: CanvasMeta = {
       id: String(backendId),
       name,
       owner: ownerId != null ? String(ownerId) : undefined,
+      ownerUsername,
       isFavorite: !!isFavorite,
       isPublic: !!isPublic,
       createdAt,
@@ -263,7 +376,10 @@ export async function getCanvas(
       doc = { elements: backend.canvasDataDetails.elements };
     } else if (typeof rawData === "string") {
       try {
-        doc = JSON.parse(rawData) as { Elements?: unknown[]; elements?: unknown[] };
+        doc = JSON.parse(rawData) as {
+          Elements?: unknown[];
+          elements?: unknown[];
+        };
       } catch {
         doc = undefined;
       }
@@ -271,8 +387,7 @@ export async function getCanvas(
       doc = rawData as { Elements?: unknown[]; elements?: unknown[] };
     }
 
-    const rawElements =
-      (doc?.Elements ?? doc?.elements) ?? [];
+    const rawElements = doc?.Elements ?? doc?.elements ?? [];
     const elements = (Array.isArray(rawElements) ? rawElements : [])
       .map((raw) => normalizeCanvasElement(raw))
       .filter((el): el is CanvasElement => el != null);
@@ -431,7 +546,9 @@ function getMockCanvases(): CanvasMeta[] {
   ];
 }
 
-function getMockCanvasById(id: string): { meta: CanvasMeta; elements: CanvasElement[] } | null {
+function getMockCanvasById(
+  id: string,
+): { meta: CanvasMeta; elements: CanvasElement[] } | null {
   const list = getMockCanvases();
   const meta = list.find((c) => c.id === id) ?? {
     ...mockCanvasMeta(id, "Untitled"),

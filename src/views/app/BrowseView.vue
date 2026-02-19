@@ -75,6 +75,7 @@ const publicCanvases = computed(() => {
         :key="c.id"
         :canvas="c"
         :show-favorite="false"
+        :show-message="true"
       />
       <p v-if="publicCanvases.length === 0" class="mst-browse__empty">
         No public canvases yet.

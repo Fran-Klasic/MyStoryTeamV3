@@ -24,6 +24,14 @@ export function getAccessToken(): string | null {
   return accessToken;
 }
 
+type OnUnauthorizedCallback = () => void;
+let onUnauthorized: OnUnauthorizedCallback | null = null;
+
+/** Register a callback to run when any API request returns 401. Used to logout and redirect. */
+export function registerOnUnauthorized(callback: OnUnauthorizedCallback) {
+  onUnauthorized = callback;
+}
+
 export type RequestOptions = Omit<RequestInit, "body"> & {
   body?: unknown;
 };
@@ -46,6 +54,9 @@ export async function api<T>(path: string, options: RequestOptions = {}): Promis
     body: body !== undefined && body !== null ? JSON.stringify(body) : undefined,
   });
   if (!response.ok) {
+    if (response.status === 401 && onUnauthorized) {
+      onUnauthorized();
+    }
     const text = await response.text();
     let detail: string;
     try {

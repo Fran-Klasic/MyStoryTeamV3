@@ -64,6 +64,11 @@ export async function logout(): Promise<void> {
   setAccessToken(null);
 }
 
+/** Test if the current token is valid. Throws on 401 or other errors. */
+export async function testAuth(): Promise<void> {
+  await api<unknown>("/api/auth/test", { method: "GET" });
+}
+
 /** Validate token with API; clear and return null on 401/invalid. */
 export async function refreshUser(): Promise<User | null> {
   if (!getAccessToken()) return null;

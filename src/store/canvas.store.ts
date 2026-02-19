@@ -10,10 +10,16 @@ export const useCanvasStore = defineStore("canvas", () => {
   const publicCanvases = ref<CanvasMeta[]>([]);
   const favoriteIds = ref<Set<string>>(new Set());
   const recentIds = ref<string[]>([]);
-  const currentCanvas = ref<{ meta: CanvasMeta; elements: CanvasElement[] } | null>(null);
+  const currentCanvas = ref<{
+    meta: CanvasMeta;
+    elements: CanvasElement[];
+  } | null>(null);
 
   const myCanvases = computed(() =>
-    allCanvases.value.map((c) => ({ ...c, isFavorite: favoriteIds.value.has(c.id) })),
+    allCanvases.value.map((c) => ({
+      ...c,
+      isFavorite: favoriteIds.value.has(c.id),
+    })),
   );
   /** Same canvases as My Canvases, but only those marked favorite */
   const favoriteCanvases = computed(() =>
@@ -24,11 +30,26 @@ export const useCanvasStore = defineStore("canvas", () => {
     return recentIds.value
       .map((id) => byId.get(id))
       .filter(Boolean)
-      .map((c) => ({ ...c!, isFavorite: favoriteIds.value.has(c!.id) })) as CanvasMeta[];
+      .map((c) => ({
+        ...c!,
+        isFavorite: favoriteIds.value.has(c!.id),
+      })) as CanvasMeta[];
   });
 
   async function loadCanvases() {
-    allCanvases.value = await canvasService.getCanvases();
+    const list = await canvasService.getCanvases();
+    const authStore = useAuthStore();
+    const currentUserId = authStore.user?.id;
+    const currentUsername = authStore.user?.username;
+    // For user's own canvases, set ownerUsername from auth store
+    allCanvases.value = list.map((c) =>
+      c.owner &&
+      currentUserId &&
+      String(c.owner) === String(currentUserId) &&
+      currentUsername
+        ? { ...c, ownerUsername: currentUsername }
+        : c,
+    );
     // Sync favorite state from API so Favorites shows the same list as My Canvases (filtered)
     favoriteIds.value = new Set(
       allCanvases.value.filter((c) => c.isFavorite).map((c) => c.id),
@@ -57,6 +78,9 @@ export const useCanvasStore = defineStore("canvas", () => {
     if (authStore.user?.id) {
       meta = { ...meta, owner: authStore.user.id };
     }
+    if (authStore.user?.username) {
+      meta = { ...meta, ownerUsername: authStore.user.username };
+    }
     allCanvases.value = [meta, ...allCanvases.value];
     currentCanvas.value = { meta, elements: [] };
     return meta;
@@ -67,8 +91,12 @@ export const useCanvasStore = defineStore("canvas", () => {
     const { meta, elements } = currentCanvas.value;
     const updated = await canvasService.saveCanvas(meta.id, meta, elements);
     const idx = allCanvases.value.findIndex((c) => c.id === meta.id);
-    if (idx >= 0) allCanvases.value[idx] = { ...allCanvases.value[idx], ...updated };
-    currentCanvas.value = { ...currentCanvas.value, meta: { ...meta, ...updated } };
+    if (idx >= 0)
+      allCanvases.value[idx] = { ...allCanvases.value[idx], ...updated };
+    currentCanvas.value = {
+      ...currentCanvas.value,
+      meta: { ...meta, ...updated },
+    };
   }
 
   function setCurrentElements(elements: CanvasElement[]) {
@@ -79,7 +107,10 @@ export const useCanvasStore = defineStore("canvas", () => {
 
   function setCurrentMeta(meta: Partial<CanvasMeta>) {
     if (currentCanvas.value) {
-      currentCanvas.value = { ...currentCanvas.value, meta: { ...currentCanvas.value.meta, ...meta } };
+      currentCanvas.value = {
+        ...currentCanvas.value,
+        meta: { ...currentCanvas.value.meta, ...meta },
+      };
     }
   }
 

@@ -1,15 +1,42 @@
 <script setup lang="ts">
-import { RouterLink } from "vue-router";
+import { computed } from "vue";
+import { RouterLink, useRouter } from "vue-router";
+import { useAuthStore } from "@/store/auth.store";
 import type { CanvasMeta } from "@/types/canvas-meta";
 
 const props = defineProps<{
   canvas: CanvasMeta;
   showFavorite?: boolean;
+  showMessage?: boolean;
 }>();
+
+const router = useRouter();
+const authStore = useAuthStore();
 
 const emit = defineEmits<{
   (e: "toggle-favorite", id: string): void;
 }>();
+
+/** Display author as username#user_id. For current user's canvases, use authStore (same as public canvas logic: backend for others, auth for self). */
+const ownerDisplay = computed(() => {
+  const owner = props.canvas.owner;
+  if (!owner) return null;
+  const isCurrentUser = authStore.user?.id && String(owner) === String(authStore.user.id);
+  const username = isCurrentUser
+    ? authStore.user?.username
+    : props.canvas.ownerUsername;
+  const userId = isCurrentUser ? authStore.user?.id : owner;
+  const display = username && username.trim() ? username.trim() : "User";
+  return `${display}#${userId}`;
+});
+
+function handleMessageOwner(e: Event) {
+  e.preventDefault();
+  e.stopPropagation();
+  if (props.canvas.owner && props.canvas.owner !== authStore.user?.id) {
+    router.push({ path: "/app/messages", query: { userId: props.canvas.owner } });
+  }
+}
 
 function formatDate(iso: string) {
   const d = new Date(iso);
@@ -33,6 +60,10 @@ function formatDate(iso: string) {
       <div class="mst-canvas-card__body">
         <h4 class="mst-canvas-card__title">{{ canvas.name }}</h4>
         <p class="mst-canvas-card__meta">
+          <template v-if="ownerDisplay">
+            <span class="mst-canvas-card__author">{{ ownerDisplay }}</span>
+            <span> · </span>
+          </template>
           {{ formatDate(canvas.updatedAt) }}
           <template v-if="canvas.stats?.elementsCount">
             · {{ canvas.stats.elementsCount }} items
@@ -49,6 +80,15 @@ function formatDate(iso: string) {
       @click.prevent="emit('toggle-favorite', canvas.id)"
     >
       ★
+    </button>
+    <button
+      v-if="showMessage && canvas.owner && canvas.owner !== authStore.user?.id"
+      type="button"
+      class="mst-canvas-card__msg"
+      aria-label="Message owner"
+      @click="handleMessageOwner"
+    >
+      Message
     </button>
   </article>
 </template>
@@ -106,6 +146,10 @@ function formatDate(iso: string) {
   font-size: var(--mst-font-size-xs);
   color: var(--mst-color-text-soft);
 }
+.mst-canvas-card__author {
+  font-weight: 500;
+  color: var(--mst-color-text);
+}
 .mst-canvas-card__fav {
   position: absolute;
   top: 0.5rem;
@@ -126,5 +170,22 @@ function formatDate(iso: string) {
 }
 .mst-canvas-card__fav--on {
   color: var(--mst-color-accent);
+}
+.mst-canvas-card__msg {
+  position: absolute;
+  bottom: 0.5rem;
+  right: 0.5rem;
+  padding: 0.35rem 0.6rem;
+  font-size: var(--mst-font-size-xs);
+  font-weight: 600;
+  border: none;
+  border-radius: var(--mst-radius-sm);
+  background: var(--mst-color-accent);
+  color: white;
+  cursor: pointer;
+  transition: opacity var(--mst-duration-fast);
+}
+.mst-canvas-card__msg:hover {
+  opacity: 0.9;
 }
 </style>

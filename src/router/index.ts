@@ -1,5 +1,6 @@
 import { createRouter, createWebHistory, type RouteRecordRaw } from "vue-router";
 import { useAuthStore } from "@/store/auth.store";
+import * as authService from "@/api/auth.service";
 
 const routes: RouteRecordRaw[] = [
   {
@@ -106,6 +107,15 @@ router.beforeEach(async (to) => {
   }
   if (to.path.startsWith("/auth/") && authStore.isAuthenticated) {
     return { path: "/app/dashboard" };
+  }
+  // Validate token when entering protected routes
+  if (to.meta.requiresAuth && authStore.isAuthenticated) {
+    try {
+      await authService.testAuth();
+    } catch {
+      authStore.logout();
+      return { path: "/auth/sign-in" };
+    }
   }
 });
 
