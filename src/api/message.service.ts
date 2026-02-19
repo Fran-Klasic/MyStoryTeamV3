@@ -3,33 +3,41 @@ import type { ConversationSummary, Message } from "@/types/message";
 
 type BackendConversation = {
   ID_Conversation?: number;
+  iD_Conversation?: number;
   ID_User?: number;
+  iD_User?: number;
   Created_At?: string;
+  created_At?: string;
 };
 
 type BackendMessage = {
   ID_Message?: number;
+  iD_Message?: number;
   ID_Conversation?: number;
+  iD_Conversation?: number;
   ID_User_Sender?: number;
+  iD_User_Sender?: number;
   Message_Content?: string;
+  message_Content?: string;
   Created_At?: string;
+  created_At?: string;
 };
 
 function mapConversation(c: BackendConversation): ConversationSummary {
   return {
-    id: String(c.ID_Conversation ?? ""),
-    otherUserId: String(c.ID_User ?? ""),
-    createdAt: c.Created_At ?? new Date().toISOString(),
+    id: String(c.ID_Conversation ?? c.iD_Conversation ?? ""),
+    otherUserId: String(c.ID_User ?? c.iD_User ?? ""),
+    createdAt: c.Created_At ?? c.created_At ?? new Date().toISOString(),
   };
 }
 
 function mapMessage(m: BackendMessage, conversationId: string): Message {
   return {
-    id: String(m.ID_Message ?? ""),
+    id: String(m.ID_Message ?? m.iD_Message ?? ""),
     conversationId,
-    senderId: String(m.ID_User_Sender ?? ""),
-    content: m.Message_Content ?? "",
-    createdAt: m.Created_At ?? new Date().toISOString(),
+    senderId: String(m.ID_User_Sender ?? m.iD_User_Sender ?? ""),
+    content: m.Message_Content ?? m.message_Content ?? "",
+    createdAt: m.Created_At ?? m.created_At ?? new Date().toISOString(),
   };
 }
 
@@ -45,9 +53,13 @@ export async function getMessages(conversationId: string): Promise<Message[]> {
     `/api/auth/conversations/${conversationId}`,
     { method: "GET" }
   );
-  return (Array.isArray(backend) ? backend : []).map((m) =>
+  const list = (Array.isArray(backend) ? backend : []).map((m) =>
     mapMessage(m, conversationId)
   );
+  list.sort(
+    (a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime()
+  );
+  return list;
 }
 
 export async function createConversation(
@@ -99,4 +111,39 @@ export async function addUserToConversation(
     }
   );
   return typeof result === "number" ? result : 0;
+}
+
+/** Fetch conversation name. Returns null on 404. */
+export async function getConversationName(conversationId: string): Promise<string | null> {
+  try {
+    const result = await api<string | { Conversation_Name?: string; value?: string }>(
+      `/api/auth/conversations/${conversationId}/name`,
+      { method: "GET" }
+    );
+    if (typeof result === "string" && result.trim().length > 0) return result.trim();
+    if (result && typeof result === "object") {
+      const name = (result as { Conversation_Name?: string; value?: string }).Conversation_Name
+        ?? (result as { Conversation_Name?: string; value?: string }).value;
+      if (typeof name === "string" && name.trim().length > 0) return name.trim();
+    }
+    return null;
+  } catch {
+    return null;
+  }
+}
+
+/** Update conversation name. Returns true on success. */
+export async function updateConversationName(
+  conversationId: string,
+  name: string
+): Promise<boolean> {
+  try {
+    await api(`/api/auth/conversations/${conversationId}/name`, {
+      method: "PUT",
+      body: { Conversation_Name: name.trim() },
+    });
+    return true;
+  } catch {
+    return false;
+  }
 }

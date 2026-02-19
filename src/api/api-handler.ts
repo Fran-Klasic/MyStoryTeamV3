@@ -71,5 +71,18 @@ export async function api<T>(path: string, options: RequestOptions = {}): Promis
   if (contentType?.includes("application/json")) {
     return response.json() as Promise<T>;
   }
+  // Handle text/plain or other non-JSON responses (e.g. ASP.NET returning raw string)
+  const text = await response.text();
+  if (text != null && text.trim()) {
+    const trimmed = text.trim();
+    if (trimmed.startsWith("{") || trimmed.startsWith("[")) {
+      try {
+        return JSON.parse(text) as T;
+      } catch {
+        return trimmed as unknown as T;
+      }
+    }
+    return trimmed as unknown as T;
+  }
   return undefined as unknown as T;
 }

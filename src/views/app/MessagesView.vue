@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, computed, onMounted, watch } from "vue";
+import { ref, computed, onMounted, onBeforeUnmount, watch, nextTick } from "vue";
 import { useRoute } from "vue-router";
 import { useMessageStore } from "@/store/message.store";
 import { useAuthStore } from "@/store/auth.store";
@@ -11,6 +11,12 @@ const authStore = useAuthStore();
 const newMessageText = ref("");
 const showNewConversation = ref(false);
 const newConversationUserId = ref("");
+const newConversationError = ref("");
+const newConversationLoading = ref(false);
+const messagesContainerRef = ref<HTMLElement | null>(null);
+const usernameBySenderId = ref<Record<string, string>>({});
+const editingConvName = ref<string | null>(null);
+const editingConvNameValue = ref("");
 
 const currentUserId = computed(() => authStore.user?.id ?? null);
 
@@ -40,8 +46,44 @@ function formatDate(iso: string) {
   });
 }
 
+function truncatePreview(text: string, maxLen = 40) {
+  if (text.length <= maxLen) return text;
+  return text.slice(0, maxLen).trim() + "…";
+}
+
 function isOwnMessage(senderId: string) {
   return senderId === currentUserId.value;
+}
+
+function displayName(senderId: string): string {
+  return usernameBySenderId.value[senderId] ?? `User#${senderId}`;
+}
+
+function getConvDisplayName(conv: { id: string; otherUserId: string }): string {
+  return messageStore.getConversationDisplayName(conv.id, "Conversation");
+}
+
+function startEditConvName() {
+  const convId = messageStore.currentConversationId;
+  const conv = messageStore.currentConversation;
+  if (!convId || !conv) return;
+  const current = messageStore.getConversationDisplayName(convId, "Conversation");
+  editingConvName.value = convId;
+  editingConvNameValue.value = current;
+}
+
+async function saveConvName() {
+  const convId = editingConvName.value;
+  const val = editingConvNameValue.value.trim();
+  if (!convId || !val) {
+    editingConvName.value = null;
+    return;
+  }
+  const ok = await messageStore.updateConversationName(convId, val);
+  editingConvName.value = null;
+  if (!ok) {
+    editingConvNameValue.value = "";
+  }
 }
 
 async function handleSelectConversation(id: string) {
@@ -58,24 +100,62 @@ async function handleSendMessage() {
 function openNewConversation() {
   showNewConversation.value = true;
   newConversationUserId.value = "";
+  newConversationError.value = "";
 }
 
 async function handleStartNewConversation() {
-  const userId = newConversationUserId.value.trim();
-  if (!userId) return;
-  const convId = await messageStore.startConversationWith(userId);
-  if (convId) {
-    showNewConversation.value = false;
-    newConversationUserId.value = "";
+  const input = newConversationUserId.value.trim();
+  if (!input) return;
+  if (!authStore.isAuthenticated) {
+    newConversationError.value = "You must be signed in to start a conversation.";
+    return;
+  }
+  if (!authStore.user?.id) {
+    newConversationLoading.value = true;
+    newConversationError.value = "";
+    try {
+      await authStore.refreshUser();
+    } finally {
+      newConversationLoading.value = false;
+    }
+    if (!authStore.user?.id) {
+      newConversationError.value = "Could not load your profile. Please refresh the page.";
+      return;
+    }
+  }
+  const parsed = messageStore.parseUsernameIdInput(input);
+  if (parsed.length === 0) {
+    newConversationError.value = "Invalid format. Use username#id (e.g. test#1)";
+    return;
+  }
+  newConversationError.value = "";
+  newConversationLoading.value = true;
+  try {
+    const convId = await messageStore.startConversationWith(input);
+    if (convId) {
+      showNewConversation.value = false;
+      newConversationUserId.value = "";
+    } else {
+      newConversationError.value = "Could not create conversation. Check the user ID exists.";
+    }
+  } finally {
+    newConversationLoading.value = false;
   }
 }
 
 onMounted(async () => {
+  if (authStore.isAuthenticated && !authStore.user?.id) {
+    await authStore.refreshUser();
+  }
   await messageStore.loadConversations();
   const userId = route.query.userId;
   if (typeof userId === "string" && userId) {
     await messageStore.startConversationWith(userId);
   }
+});
+
+onBeforeUnmount(() => {
+  messageStore.stopPolling();
 });
 
 watch(
@@ -85,6 +165,37 @@ watch(
       await messageStore.startConversationWith(userId);
     }
   }
+);
+
+watch(
+  () => messageStore.messages,
+  () => {
+    nextTick(() => {
+      const el = messagesContainerRef.value;
+      if (!el) return;
+      const nearBottom = el.scrollHeight - el.scrollTop - el.clientHeight < 100;
+      if (nearBottom) {
+        el.scrollTo({ top: el.scrollHeight, behavior: "smooth" });
+      }
+    });
+  },
+  { flush: "post" }
+);
+
+watch(
+  () => messageStore.messages,
+  async () => {
+    const msgs = messageStore.messages;
+    const ids = [...new Set(msgs.map((m) => m.senderId))];
+    const next: Record<string, string> = { ...usernameBySenderId.value };
+    for (const id of ids) {
+      if (!next[id]) {
+        next[id] = await messageStore.getUsernameForSender(id);
+      }
+    }
+    usernameBySenderId.value = next;
+  },
+  { immediate: true }
 );
 </script>
 
@@ -117,8 +228,15 @@ watch(
           :class="{ 'mst-messages__item--active': messageStore.currentConversationId === conv.id }"
           @click="handleSelectConversation(conv.id)"
         >
-          <span class="mst-messages__item-name">User {{ conv.otherUserId }}</span>
-          <span class="mst-messages__item-preview">{{ formatDate(conv.createdAt) }}</span>
+          <span class="mst-messages__item-name">{{ getConvDisplayName(conv) }}</span>
+          <span class="mst-messages__item-preview">
+            <template v-if="messageStore.getLastMessagePreview(conv.id)">
+              {{ truncatePreview(messageStore.getLastMessagePreview(conv.id)!.content) }}
+            </template>
+            <template v-else>
+              {{ formatDate(conv.createdAt) }}
+            </template>
+          </span>
         </button>
       </aside>
       <main class="mst-messages__panel">
@@ -126,36 +244,80 @@ watch(
           Select a conversation
         </p>
         <div v-else class="mst-messages__thread">
-          <p v-if="messageStore.loading && messageStore.messages.length === 0" class="mst-messages__loading">
-            Loading messages…
-          </p>
-          <div v-else class="mst-messages__messages">
-            <div
-              v-for="msg in messageStore.messages"
-              :key="msg.id"
-              class="mst-messages__bubble"
-              :class="{ 'mst-messages__bubble--own': isOwnMessage(msg.senderId) }"
+          <header class="mst-messages__thread-header">
+            <template v-if="editingConvName === messageStore.currentConversationId">
+              <input
+                v-model="editingConvNameValue"
+                type="text"
+                class="mst-messages__thread-name-input"
+                placeholder="Conversation name"
+                @blur="saveConvName"
+                @keydown.enter="saveConvName"
+              />
+            </template>
+            <template v-else>
+              <span class="mst-messages__thread-name">
+                {{ messageStore.currentConversation && getConvDisplayName(messageStore.currentConversation) }}
+              </span>
+              <button
+                type="button"
+                class="mst-messages__thread-edit"
+                title="Edit conversation name"
+                @click="startEditConvName"
+              >
+                <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+              </button>
+            </template>
+          </header>
+          <div class="mst-messages__thread-content">
+            <p v-if="messageStore.loading && messageStore.messages.length === 0" class="mst-messages__loading">
+              Loading messages…
+            </p>
+            <p
+              v-else-if="messageStore.messages.length === 0"
+              class="mst-messages__empty-thread"
             >
-              <span class="mst-messages__bubble-content">{{ msg.content }}</span>
-              <span class="mst-messages__bubble-time">{{ formatTime(msg.createdAt) }}</span>
+              No messages yet. Start the conversation!
+            </p>
+            <div
+              v-else
+              ref="messagesContainerRef"
+              class="mst-messages__messages"
+            >
+              <div
+                v-for="msg in messageStore.messages"
+                :key="msg.id"
+                class="mst-messages__bubble"
+                :class="{ 'mst-messages__bubble--own': isOwnMessage(msg.senderId) }"
+              >
+                <span class="mst-messages__bubble-username">{{ displayName(msg.senderId) }}</span>
+                <span class="mst-messages__bubble-content">{{ msg.content }}</span>
+                <span class="mst-messages__bubble-time">{{ formatTime(msg.createdAt) }}</span>
+              </div>
             </div>
           </div>
           <form class="mst-messages__compose" @submit.prevent="handleSendMessage">
-            <input
-              v-model="newMessageText"
-              type="text"
-              class="mst-messages__input"
-              placeholder="Type a message…"
-              maxlength="1000"
-              :disabled="messageStore.sending"
-            />
-            <button
-              type="submit"
-              class="mst-messages__send"
-              :disabled="!newMessageText.trim() || messageStore.sending"
-            >
-              Send
-            </button>
+            <div class="mst-messages__compose-row">
+              <input
+                v-model="newMessageText"
+                type="text"
+                class="mst-messages__input"
+                placeholder="Type a message…"
+                maxlength="1000"
+                :disabled="messageStore.sending"
+              />
+              <button
+                type="submit"
+                class="mst-messages__send"
+                :disabled="!newMessageText.trim() || messageStore.sending"
+                @click.prevent="handleSendMessage"
+              >
+                {{ messageStore.sending ? "Sending…" : "Send" }}
+              </button>
+            </div>
+            <p v-if="messageStore.sendError" class="mst-messages__send-error">
+              {{ messageStore.sendError }}
+            </p>
           </form>
         </div>
       </main>
@@ -165,25 +327,27 @@ watch(
     <div v-if="showNewConversation" class="mst-messages__modal-overlay" @click.self="showNewConversation = false">
       <div class="mst-messages__modal">
         <h3 class="mst-messages__modal-title">New conversation</h3>
-        <p class="mst-messages__modal-desc">Enter the user ID of the person you want to message.</p>
+        <p class="mst-messages__modal-desc">Enter the user in format <strong>username#id</strong> (e.g. test#1). For multiple users, separate with commas.</p>
         <input
           v-model="newConversationUserId"
           type="text"
           class="mst-messages__input"
-          placeholder="User ID"
+          placeholder="username#id (e.g. test#1)"
+          :disabled="newConversationLoading"
           @keydown.enter="handleStartNewConversation"
         />
+        <p v-if="newConversationError" class="mst-messages__modal-error">{{ newConversationError }}</p>
         <div class="mst-messages__modal-actions">
-          <button type="button" class="mst-messages__modal-btn mst-messages__modal-btn--secondary" @click="showNewConversation = false">
+          <button type="button" class="mst-messages__modal-btn mst-messages__modal-btn--secondary" :disabled="newConversationLoading" @click="showNewConversation = false">
             Cancel
           </button>
           <button
             type="button"
             class="mst-messages__modal-btn mst-messages__modal-btn--primary"
-            :disabled="!newConversationUserId.trim()"
+            :disabled="!newConversationUserId.trim() || newConversationLoading"
             @click="handleStartNewConversation"
           >
-            Start
+            {{ newConversationLoading ? "Starting…" : "Start" }}
           </button>
         </div>
       </div>
@@ -271,7 +435,8 @@ watch(
 }
 .mst-messages__placeholder,
 .mst-messages__loading,
-.mst-messages__empty {
+.mst-messages__empty,
+.mst-messages__empty-thread {
   color: var(--mst-color-text-soft);
   font-size: var(--mst-font-size-sm);
   margin: 0;
@@ -282,6 +447,52 @@ watch(
   flex-direction: column;
   flex: 1;
   min-height: 0;
+}
+.mst-messages__thread-header {
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.75rem 1.5rem;
+  border-bottom: 1px solid rgba(58, 167, 196, 0.25);
+  background: rgba(255, 255, 255, 0.6);
+}
+.mst-messages__thread-name {
+  font-weight: 600;
+  font-size: var(--mst-font-size-base);
+  color: var(--mst-color-text);
+}
+.mst-messages__thread-name-input {
+  flex: 1;
+  padding: 0.4rem 0.75rem;
+  font-size: var(--mst-font-size-sm);
+  border: 1px solid rgba(58, 167, 196, 0.4);
+  border-radius: var(--mst-radius-md);
+  background: white;
+  outline: none;
+}
+.mst-messages__thread-name-input:focus {
+  border-color: var(--mst-color-accent);
+}
+.mst-messages__thread-edit {
+  padding: 0.35rem;
+  border: none;
+  background: transparent;
+  color: var(--mst-color-text-soft);
+  cursor: pointer;
+  border-radius: var(--mst-radius-sm);
+  transition: color var(--mst-duration-fast), background var(--mst-duration-fast);
+}
+.mst-messages__thread-edit:hover {
+  color: var(--mst-color-accent);
+  background: rgba(58, 167, 196, 0.15);
+}
+.mst-messages__thread-content {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
 }
 .mst-messages__messages {
   flex: 1;
@@ -296,12 +507,18 @@ watch(
   padding: 0.6rem 1rem;
   border-radius: var(--mst-radius-md);
   background: rgba(58, 167, 196, 0.12);
-  align-self: flex-start;
+  align-self: flex-end;
 }
 .mst-messages__bubble--own {
-  align-self: flex-end;
+  align-self: flex-start;
   background: var(--mst-color-accent-soft);
   color: var(--mst-color-text);
+}
+.mst-messages__bubble-username {
+  display: block;
+  font-size: var(--mst-font-size-xs);
+  color: var(--mst-color-text-soft);
+  margin-bottom: 0.15rem;
 }
 .mst-messages__bubble-content {
   display: block;
@@ -320,11 +537,22 @@ watch(
   opacity: 0.85;
 }
 .mst-messages__compose {
+  flex-shrink: 0;
   display: flex;
-  gap: 0.5rem;
+  flex-direction: column;
+  gap: 0.25rem;
   padding: 1rem 1.5rem;
   border-top: 1px solid rgba(58, 167, 196, 0.25);
   background: rgba(255, 255, 255, 0.5);
+}
+.mst-messages__compose-row {
+  display: flex;
+  gap: 0.5rem;
+}
+.mst-messages__send-error {
+  margin: 0;
+  font-size: var(--mst-font-size-xs);
+  color: #c53030;
 }
 .mst-messages__input {
   flex: 1;
@@ -388,7 +616,12 @@ watch(
 }
 .mst-messages__modal .mst-messages__input {
   width: 100%;
-  margin-bottom: 1rem;
+  margin-bottom: 0.5rem;
+}
+.mst-messages__modal-error {
+  margin: 0 0 1rem;
+  font-size: var(--mst-font-size-sm);
+  color: #c53030;
 }
 .mst-messages__modal-actions {
   display: flex;

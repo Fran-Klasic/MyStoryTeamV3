@@ -1,11 +1,10 @@
 import { API_BASE_URL } from "@/config/api";
 import { api, setAccessToken, getAccessToken } from "./api-handler";
-import type { Credentials, RegisterPayload, User } from "@/types/auth";
+import type { Credentials, RegisterPayload } from "@/types/auth";
+import type { BackendUser } from "./user-mapping";
+import { mapBackendUserToUser } from "./user-mapping";
 
-async function postForToken(
-  path: string,
-  body: unknown,
-): Promise<string> {
+async function postForToken(path: string, body: unknown): Promise<string> {
   const url = `${API_BASE_URL}${path}`;
   const response = await fetch(url, {
     method: "POST",
@@ -53,9 +52,7 @@ export async function login(credentials: Credentials): Promise<void> {
 }
 
 /** Register only via the real API; response body is a bare JWT string. */
-export async function register(
-  payload: RegisterPayload,
-): Promise<void> {
+export async function register(payload: RegisterPayload): Promise<void> {
   const token = await postForToken("/api/auth/register", payload);
   setAccessToken(token);
 }
@@ -70,11 +67,11 @@ export async function testAuth(): Promise<void> {
 }
 
 /** Validate token with API; clear and return null on 401/invalid. */
-export async function refreshUser(): Promise<User | null> {
+export async function refreshUser() {
   if (!getAccessToken()) return null;
   try {
-    const user = await api<User>("/api/auth/user", { method: "GET" });
-    return user;
+    const raw = await api<BackendUser>("/api/auth/user", { method: "GET" });
+    return mapBackendUserToUser(raw);
   } catch {
     setAccessToken(null);
     return null;

@@ -48,10 +48,10 @@ function logout() {
         <RouterLink
           to="/app/profile"
           class="mst-app-sidebar__nav-item"
-          :title="authStore.user?.username ? `Profile: ${authStore.user.username}` : 'Profile'"
+          title="Profile"
           @click="closeSidebar"
         >
-          <span class="mst-app-sidebar__user-label">{{ authStore.user?.username ?? "User" }}</span>
+          Profile
         </RouterLink>
         <RouterLink to="/app/browse" class="mst-app-sidebar__nav-item" @click="closeSidebar">
           Browse
