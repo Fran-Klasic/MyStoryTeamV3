@@ -10,14 +10,15 @@ const emit = defineEmits<{
   (e: "update:selectedAddType", value: CanvasElement["type"] | null): void;
 }>();
 
+const base = import.meta.env.BASE_URL;
 const ELEMENT_TYPES: { type: CanvasElement["type"]; label: string; icon: string }[] = [
-  { type: "Text", label: "Text", icon: "/assets/icons/text-icon.svg" },
-  { type: "List", label: "List", icon: "/assets/icons/list-icon.svg" },
-  { type: "Task", label: "Task", icon: "/assets/icons/task-icon.svg" },
-  { type: "Image", label: "Image", icon: "/assets/icons/image-icon.svg" },
-  { type: "Audio", label: "Audio", icon: "/assets/icons/audio-icon.svg" },
-  { type: "Video", label: "Video", icon: "/assets/icons/video-icon.svg" },
-  { type: "Date", label: "Date", icon: "/assets/icons/date-icon.svg" },
+  { type: "Text", label: "Text", icon: `${base}assets/icons/text-icon.svg` },
+  { type: "List", label: "List", icon: `${base}assets/icons/list-icon.svg` },
+  { type: "Task", label: "Task", icon: `${base}assets/icons/task-icon.svg` },
+  { type: "Image", label: "Image", icon: `${base}assets/icons/image-icon.svg` },
+  { type: "Audio", label: "Audio", icon: `${base}assets/icons/audio-icon.svg` },
+  { type: "Video", label: "Video", icon: `${base}assets/icons/video-icon.svg` },
+  { type: "Date", label: "Date", icon: `${base}assets/icons/date-icon.svg` },
 ];
 
 function onDragStart(type: CanvasElement["type"], event: DragEvent) {
