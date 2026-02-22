@@ -1,1 +1,0 @@
-import{_ as s,o as t,c,l as o}from"./index-t2dBj-RG.js";const r={},n={class:"mst-card"};function a(e,_){return t(),c("section",n,[o(e.$slots,"default",{},void 0,!0)])}const l=s(r,[["render",a],["__scopeId","data-v-50681474"]]);export{l as M};

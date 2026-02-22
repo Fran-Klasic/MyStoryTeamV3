@@ -6,13 +6,14 @@ import type { User } from "@/types/auth";
 
 export const useAuthStore = defineStore("auth", () => {
   const user = ref<User | null>(null);
+  // Keep token in store so isAuthenticated is reactive; sync with api-handler
+  const token = ref<string | null>(getAccessToken());
 
-  // Consider user authenticated when a token is present.
-  // User profile is fetched separately and is not required just to enter protected areas.
-  const isAuthenticated = computed(() => !!getAccessToken());
+  const isAuthenticated = computed(() => !!token.value);
 
   async function login(email: string, password: string) {
     await authService.login({ email, password });
+    token.value = getAccessToken();
     // Best-effort: try to load user profile, but don't block login on failure.
     try {
       const u = await authService.refreshUser();
@@ -30,6 +31,7 @@ export const useAuthStore = defineStore("auth", () => {
     repeatPassword: string,
   ) {
     await authService.register({ username, email, password, repeatPassword });
+    token.value = getAccessToken();
     try {
       const u = await authService.refreshUser();
       if (u) user.value = u;
@@ -41,12 +43,14 @@ export const useAuthStore = defineStore("auth", () => {
 
   function logout() {
     authService.logout();
+    token.value = null;
     user.value = null;
   }
 
   async function refreshUser() {
     const u = await authService.refreshUser();
     user.value = u;
+    token.value = getAccessToken();
     return u;
   }
 
