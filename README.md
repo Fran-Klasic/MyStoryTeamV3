@@ -42,16 +42,11 @@ Instead of facing the future as one overwhelming task, users focus on meaningful
 | **Connections** | Link related elements visually to show relationships and dependencies |
 | **Dashboard** | Overview of favorites, personal canvases, and recently opened work |
 | **Browse** | Explore public canvases shared by the community with sort filters (created at, updated at, name) |
-| **Profile** | User profile with canvas statistics (canvases made, oldest/newest canvas) |
+| **Profile** | User profile with canvas statistics, activity charts (time series, pie chart), and canvas activity |
 | **Background Customization** | Set background images and colors per canvas |
 | **Authentication** | Sign in and registration with JWT-based auth |
-
-### Planned (Not Yet Implemented)
-
-| Feature | Description |
-|--------|-------------|
-| **Messages** | Direct messages and group chats for collaboration and support. The UI shell is in place (conversation list and thread panel); backend integration and real-time messaging are pending. |
-| **AI Helper** | An AI-powered planning assistant to help users with tasks, canvases, and goal-setting. The interface exists with mocked responses; integration with an AI service is planned. |
+| **Messages** | Direct messages and conversations with backend integration. Conversation list, thread view, and send/receive messages. |
+| **AI Helper** | AI-powered planning assistant for tasks, canvases, and goal-setting. Integrated with backend using **GPT-4o-mini** for chat responses. Word-by-word typing effect for AI replies. |
 
 ---
 
@@ -61,6 +56,8 @@ Instead of facing the future as one overwhelming task, users focus on meaningful
 - **State Management:** Pinia
 - **Routing:** Vue Router
 - **Styling:** Scoped CSS with design tokens (colors, radii, typography)
+- **Charts:** amCharts 5 (profile statistics)
+- **AI:** GPT-4o-mini (via backend API)
 
 ---
 
@@ -143,13 +140,19 @@ The application expects a backend API with endpoints such as:
 - `GET /api/auth/canvas` — User canvases
 - `GET /api/auth/canvas/public` — Public canvases
 - `GET/PUT/DELETE /api/auth/canvas/:id` — Canvas CRUD
+- `GET /api/auth/conversations` — User conversations (messages)
+- `GET/POST /api/auth/conversations/:id` — Conversation messages
+- `GET /api/auth/ai` — AI conversations
+- `GET /api/auth/ai/:id` — AI conversation messages
+- `POST /api/auth/ai` — Create AI conversation
+- `POST /api/auth/ai/message` — Send message (AI responses powered by GPT-4o-mini)
 
 ---
 
 ## Roadmap
 
-- [ ] **Messages** — Real-time direct and group messaging
-- [ ] **AI Helper** — Connect to an AI service for planning assistance
+- [x] **Messages** — Direct messaging with backend integration
+- [x] **AI Helper** — GPT-4o-mini–powered planning assistant
 - [ ] **Collaboration** — Shared canvases and real-time co-editing
 
 ---
