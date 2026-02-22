@@ -1,0 +1,1 @@
+import{_ as s}from"./index-DfVD50Wy.js";import{o as t,b as o,e as r}from"./vendor-CYnaoYaV.js";const c={},n={class:"mst-card"};function a(e,_){return t(),o("section",n,[r(e.$slots,"default",{},void 0,!0)])}const i=s(c,[["render",a],["__scopeId","data-v-50681474"]]);export{i as M};
