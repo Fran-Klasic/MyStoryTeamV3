@@ -149,26 +149,6 @@ The application expects a backend API with endpoints such as:
 
 ---
 
-## Roadmap
-
-- [x] **Messages** — Direct messaging with backend integration
-- [x] **AI Helper** — GPT-4o-mini–powered planning assistant
-- [X] **Collaboration** — Shared canvases and real-time co-editing
-
----
-
-## Contributing
-
-Contributions are welcome. Please open an issue or submit a pull request.
-
----
-
 ## Team
 
 **My Story Team** — Built with the goal of helping people turn their ambitions into action.
-
----
-
-## License
-
-This project is private. All rights reserved.
