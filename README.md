@@ -153,7 +153,7 @@ The application expects a backend API with endpoints such as:
 
 - [x] **Messages** — Direct messaging with backend integration
 - [x] **AI Helper** — GPT-4o-mini–powered planning assistant
-- [ ] **Collaboration** — Shared canvases and real-time co-editing
+- [X] **Collaboration** — Shared canvases and real-time co-editing
 
 ---
 
