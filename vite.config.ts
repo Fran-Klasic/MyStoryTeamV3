@@ -10,4 +10,22 @@ export default defineConfig({
       "@": fileURLToPath(new URL("./src", import.meta.url)),
     },
   },
+  build: {
+    minify: "esbuild",
+    sourcemap: false,
+    rollupOptions: {
+      output: {
+        manualChunks: (id) => {
+          if (id.includes("node_modules")) {
+            if (id.includes("vue") || id.includes("pinia") || id.includes("vue-router")) {
+              return "vendor";
+            }
+            if (id.includes("amcharts")) {
+              return "amcharts";
+            }
+          }
+        },
+      },
+    },
+  },
 });

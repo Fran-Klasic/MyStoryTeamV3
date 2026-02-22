@@ -114,7 +114,7 @@ watch(
       }
     });
   },
-  { flush: "post" }
+  { flush: "post" },
 );
 </script>
 
@@ -127,12 +127,16 @@ watch(
     <div
       class="mst-ai-helper__layout"
       :class="{
-        'mst-ai-helper__layout--mobile-thread': isMobile && aiStore.currentConversationId != null,
+        'mst-ai-helper__layout--mobile-thread':
+          isMobile && aiStore.currentConversationId != null,
       }"
     >
       <aside
         class="mst-ai-helper__list"
-        :class="{ 'mst-ai-helper__list--hidden': isMobile && aiStore.currentConversationId != null }"
+        :class="{
+          'mst-ai-helper__list--hidden':
+            isMobile && aiStore.currentConversationId != null,
+        }"
       >
         <button
           type="button"
@@ -142,11 +146,19 @@ watch(
         >
           {{ newConvLoading ? "Creating…" : "+ New conversation" }}
         </button>
-        <p v-if="newConvError" class="mst-ai-helper__error">{{ newConvError }}</p>
-        <p v-if="aiStore.loading && sortedConversations.length === 0" class="mst-ai-helper__loading">
+        <p v-if="newConvError" class="mst-ai-helper__error">
+          {{ newConvError }}
+        </p>
+        <p
+          v-if="aiStore.loading && sortedConversations.length === 0"
+          class="mst-ai-helper__loading"
+        >
           Loading…
         </p>
-        <p v-else-if="sortedConversations.length === 0" class="mst-ai-helper__empty">
+        <p
+          v-else-if="sortedConversations.length === 0"
+          class="mst-ai-helper__empty"
+        >
           No conversations yet.
         </p>
         <button
@@ -154,17 +166,28 @@ watch(
           :key="conv.id"
           type="button"
           class="mst-ai-helper__item"
-          :class="{ 'mst-ai-helper__item--active': aiStore.currentConversationId === conv.id }"
+          :class="{
+            'mst-ai-helper__item--active':
+              aiStore.currentConversationId === conv.id,
+          }"
           @click="handleSelectConversation(conv.id)"
         >
-          <span class="mst-ai-helper__item-name">{{ getConvDisplayName(conv) }}</span>
+          <span class="mst-ai-helper__item-name">{{
+            getConvDisplayName(conv)
+          }}</span>
         </button>
       </aside>
       <main
         class="mst-ai-helper__panel"
-        :class="{ 'mst-ai-helper__panel--hidden': isMobile && aiStore.currentConversationId == null }"
+        :class="{
+          'mst-ai-helper__panel--hidden':
+            isMobile && aiStore.currentConversationId == null,
+        }"
       >
-        <p v-if="aiStore.currentConversationId == null" class="mst-ai-helper__placeholder">
+        <p
+          v-if="aiStore.currentConversationId == null"
+          class="mst-ai-helper__placeholder"
+        >
           Select or create a conversation
         </p>
         <div v-else class="mst-ai-helper__thread">
@@ -176,7 +199,19 @@ watch(
               aria-label="Back to conversations"
               @click="aiStore.backToConversations"
             >
-              <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 12H5M12 19l-7-7 7-7"/></svg>
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                width="20"
+                height="20"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="2"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+              >
+                <path d="M19 12H5M12 19l-7-7 7-7" />
+              </svg>
             </button>
             <template v-if="editingConvId === aiStore.currentConversationId">
               <input
@@ -190,7 +225,10 @@ watch(
             </template>
             <template v-else>
               <span class="mst-ai-helper__thread-name">
-                {{ aiStore.currentConversation && getConvDisplayName(aiStore.currentConversation) }}
+                {{
+                  aiStore.currentConversation &&
+                  getConvDisplayName(aiStore.currentConversation)
+                }}
               </span>
               <button
                 type="button"
@@ -198,12 +236,32 @@ watch(
                 title="Edit conversation name"
                 @click="startEditConvName"
               >
-                <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  width="14"
+                  height="14"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  stroke-width="2"
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                >
+                  <path
+                    d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"
+                  />
+                  <path
+                    d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"
+                  />
+                </svg>
               </button>
             </template>
           </header>
           <div class="mst-ai-helper__thread-content" ref="messagesContainerRef">
-            <p v-if="aiStore.loading && aiStore.messages.length === 0" class="mst-ai-helper__loading">
+            <p
+              v-if="aiStore.loading && aiStore.messages.length === 0"
+              class="mst-ai-helper__loading"
+            >
               Loading messages…
             </p>
             <p
@@ -222,13 +280,16 @@ watch(
                   'mst-ai-helper__bubble--own': isUserMessage(msg),
                 }"
               >
-                <span class="mst-ai-helper__bubble-role">{{ displayRole(msg) }}</span>
+                <span class="mst-ai-helper__bubble-role">{{
+                  displayRole(msg)
+                }}</span>
                 <span class="mst-ai-helper__bubble-content">
                   <AiMessageContent
                     v-if="isAiMessage(msg)"
                     :content="msg.content"
                     :animate="
-                      aiStore.messages[aiStore.messages.length - 1]?.id === msg.id
+                      aiStore.messages[aiStore.messages.length - 1]?.id ===
+                      msg.id
                     "
                   />
                   <template v-else>{{ msg.content }}</template>
@@ -336,7 +397,9 @@ watch(
   border: 1px solid rgba(58, 167, 196, 0.4);
   border-radius: var(--mst-radius-md);
   cursor: pointer;
-  transition: background var(--mst-duration-fast), color var(--mst-duration-fast);
+  transition:
+    background var(--mst-duration-fast),
+    color var(--mst-duration-fast);
 }
 .mst-ai-helper__new-btn:hover:not(:disabled) {
   background: rgba(58, 167, 196, 0.2);
@@ -445,7 +508,9 @@ watch(
   color: var(--mst-color-text-soft);
   cursor: pointer;
   border-radius: var(--mst-radius-sm);
-  transition: color var(--mst-duration-fast), background var(--mst-duration-fast);
+  transition:
+    color var(--mst-duration-fast),
+    background var(--mst-duration-fast);
 }
 .mst-ai-helper__thread-edit:hover {
   color: var(--mst-color-accent);

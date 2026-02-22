@@ -43,7 +43,7 @@ watch(
         if (first) await aiStore.selectConversation(first.id);
       }
     }
-  }
+  },
 );
 </script>
 
@@ -54,7 +54,12 @@ watch(
       <div class="mst-ai-quickchat__panel">
         <header class="mst-ai-quickchat__header">
           <h3 class="mst-ai-quickchat__title">AI Helper</h3>
-          <button type="button" class="mst-ai-quickchat__close" aria-label="Close" @click="close">
+          <button
+            type="button"
+            class="mst-ai-quickchat__close"
+            aria-label="Close"
+            @click="close"
+          >
             ×
           </button>
         </header>
@@ -65,7 +70,9 @@ watch(
             class="mst-ai-quickchat__message"
             :class="'mst-ai-quickchat__message--' + messageRoleClass(msg)"
           >
-            <span class="mst-ai-quickchat__message-role">{{ displayRole(msg) }}</span>
+            <span class="mst-ai-quickchat__message-role">{{
+              displayRole(msg)
+            }}</span>
             <p class="mst-ai-quickchat__message-content">
               <AiMessageContent
                 v-if="isAiMessage(msg)"
@@ -77,7 +84,10 @@ watch(
               <template v-else>{{ msg.content }}</template>
             </p>
           </div>
-          <p v-if="aiStore.messages.length === 0" class="mst-ai-quickchat__placeholder">
+          <p
+            v-if="aiStore.messages.length === 0"
+            class="mst-ai-quickchat__placeholder"
+          >
             Ask about tasks, canvases, or planning.
           </p>
         </div>
@@ -89,7 +99,11 @@ watch(
             placeholder="Type a message…"
             :disabled="aiStore.sending"
           />
-          <MstButton type="submit" variant="primary" :disabled="aiStore.sending || !input.trim()">
+          <MstButton
+            type="submit"
+            variant="primary"
+            :disabled="aiStore.sending || !input.trim()"
+          >
             {{ aiStore.sending ? "…" : "Send" }}
           </MstButton>
         </form>

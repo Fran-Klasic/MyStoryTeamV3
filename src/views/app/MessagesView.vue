@@ -585,10 +585,10 @@ watch(
   padding: 0.6rem 1rem;
   border-radius: var(--mst-radius-md);
   background: rgba(58, 167, 196, 0.12);
-  align-self: flex-end;
+  align-self: flex-start;
 }
 .mst-messages__bubble--own {
-  align-self: flex-start;
+  align-self: flex-end;
   background: var(--mst-color-accent-soft);
   color: var(--mst-color-text);
 }

@@ -1,9 +1,5 @@
 <script setup lang="ts">
 import { ref, computed, onMounted, onBeforeUnmount, watch, nextTick } from "vue";
-import * as am5 from "@amcharts/amcharts5";
-import * as am5xy from "@amcharts/amcharts5/xy";
-import * as am5percent from "@amcharts/amcharts5/percent";
-import am5themes_Animated from "@amcharts/amcharts5/themes/Animated";
 import MstCard from "@/components/common/MstCard.vue";
 import { useAuthStore } from "@/store/auth.store";
 import { useUserStore } from "@/store/user.store";
@@ -110,27 +106,43 @@ onMounted(async () => {
   }
 });
 
+async function loadAmCharts() {
+  const [am5Mod, am5xyMod, am5percentMod, am5themesMod] = await Promise.all([
+    import("@amcharts/amcharts5"),
+    import("@amcharts/amcharts5/xy"),
+    import("@amcharts/amcharts5/percent"),
+    import("@amcharts/amcharts5/themes/Animated"),
+  ]);
+  const am5 = am5Mod.default ?? am5Mod;
+  const am5xy = am5xyMod.default ?? am5xyMod;
+  const am5percent = am5percentMod.default ?? am5percentMod;
+  const ThemeClass = (am5themesMod as { default?: { new: (r: unknown) => unknown } }).default ?? am5themesMod;
+  const am5themes_Animated = ThemeClass as { new: (r: unknown) => unknown };
+  return { am5, am5xy, am5percent, am5themes_Animated };
+}
+
 watch(
   () => [statsLoading.value, stats.value, timeSeriesData.value, hasTimeData.value],
   async () => {
     if (!statsLoading.value) {
       await nextTick();
-      if (pieChartRef.value) initPieChart();
-      if (hasTimeData.value && timeChartRef.value) initTimeChart();
+      if (pieChartRef.value) await initPieChart();
+      if (hasTimeData.value && timeChartRef.value) await initTimeChart();
     }
   },
   { immediate: true }
 );
 
-function initTimeChart() {
+async function initTimeChart() {
   if (!timeChartRef.value || timeSeriesData.value.length === 0) return;
   if (timeChartRoot) {
     timeChartRoot.dispose();
     timeChartRoot = null;
   }
+  const { am5, am5xy, am5themes_Animated } = await loadAmCharts();
 
   const root = am5.Root.new(timeChartRef.value);
-  root.setThemes([am5themes_Animated.new(root)]);
+  root.setThemes([am5themes_Animated.new(root) as any]);
 
   const chart = root.container.children.push(
     am5xy.XYChart.new(root, {
@@ -173,15 +185,16 @@ function initTimeChart() {
   timeChartRoot = root;
 }
 
-function initPieChart() {
+async function initPieChart() {
   if (!pieChartRef.value) return;
   if (pieChartRoot) {
     pieChartRoot.dispose();
     pieChartRoot = null;
   }
+  const { am5, am5percent, am5themes_Animated } = await loadAmCharts();
 
   const root = am5.Root.new(pieChartRef.value);
-  root.setThemes([am5themes_Animated.new(root)]);
+  root.setThemes([am5themes_Animated.new(root) as any]);
 
   const chart = root.container.children.push(
     am5percent.PieChart.new(root, {

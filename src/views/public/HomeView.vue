@@ -14,8 +14,9 @@ const router = useRouter();
         <p class="mst-home__eyebrow">Cinematic planner &amp; helper</p>
         <h1>Turn your life goals into a story worth directing.</h1>
         <p class="mst-home__lead">
-          My Story Team helps you break overwhelming ambitions into clear scenes, daily shots,
-          and motivating milestones—so the future feels directed, not improvised.
+          My Story Team helps you break overwhelming ambitions into clear
+          scenes, daily shots, and motivating milestones—so the future feels
+          directed, not improvised.
         </p>
         <div class="mst-home__hero-actions">
           <MstButton variant="primary" @click="router.push('/discover')">
@@ -31,9 +32,11 @@ const router = useRouter();
     <PageSection id="overview" title="Overview">
       <MstCard>
         <p>
-          My Story Team helps you turn big, overwhelming goals into clear, manageable plans. By
-          organizing your life into daily actions, short-term milestones, and long-term ambitions,
-          the planner gives structure, clarity, and motivation to move forward, one step at a time.
+          My Story Team helps you turn big, overwhelming goals into clear,
+          manageable plans. By organizing your life into daily actions,
+          short-term milestones, and long-term ambitions, the planner gives
+          structure, clarity, and motivation to move forward, one step at a
+          time.
         </p>
       </MstCard>
     </PageSection>
@@ -41,20 +44,23 @@ const router = useRouter();
     <PageSection id="about" title="About">
       <MstCard>
         <p>
-          Many people have important life goals such as education, career growth, health, or personal
-          development, yet they often struggle to turn those goals into action. Common obstacles
-          include not knowing where to begin, feeling overwhelmed by long-term ambitions, losing
+          Many people have important life goals such as education, career
+          growth, health, or personal development, yet they often struggle to
+          turn those goals into action. Common obstacles include not knowing
+          where to begin, feeling overwhelmed by long-term ambitions, losing
           motivation over time, and neglecting essential daily habits.
         </p>
         <p style="margin-top: 1rem">
-          When these challenges persist, stress, anxiety, and burnout increase. Talented and motivated
-          individuals may give up on their ambitions, leading to lost potential both on a personal
-          level and within society as a whole.
+          When these challenges persist, stress, anxiety, and burnout increase.
+          Talented and motivated individuals may give up on their ambitions,
+          leading to lost potential both on a personal level and within society
+          as a whole.
         </p>
         <p style="margin-top: 1rem">
-          My Story Team was created to address this problem by helping people break down complex goals
-          into clear, structured plans. Instead of facing the future as a single overwhelming task,
-          users can focus on meaningful steps, track their progress, and build momentum over time.
+          My Story Team was created to address this problem by helping people
+          break down complex goals into clear, structured plans. Instead of
+          facing the future as a single overwhelming task, users can focus on
+          meaningful steps, track their progress, and build momentum over time.
         </p>
         <ul class="mst-home__bullets">
           <li>Turn big goals into manageable steps</li>
@@ -117,4 +123,3 @@ const router = useRouter();
   }
 }
 </style>
-
