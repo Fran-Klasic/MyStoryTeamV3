@@ -22,11 +22,6 @@ const routes: RouteRecordRaw[] = [
         component: () => import("@/views/public/WalkthroughView.vue"),
       },
       {
-        path: "demonstrations",
-        name: "demonstrations",
-        component: () => import("@/views/public/DemonstrationsView.vue"),
-      },
-      {
         path: "auth/sign-in",
         name: "sign-in",
         component: () => import("@/views/auth/SignInView.vue"),

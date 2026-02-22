@@ -125,7 +125,7 @@ src/
 └── views/        # Page-level components
     ├── app/      # Authenticated app views (dashboard, browse, messages, ai-helper, profile, canvas)
     ├── auth/     # Sign in, register
-    └── public/   # Home, discover, walkthrough, demonstrations
+    └── public/   # Home, discover, walkthrough
 ```
 
 ---

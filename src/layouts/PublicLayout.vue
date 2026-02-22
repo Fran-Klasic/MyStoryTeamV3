@@ -27,9 +27,6 @@ import { RouterLink, RouterView } from "vue-router";
           <RouterLink to="/walkthrough" class="mst-public-header__nav-link"
             >Walkthrough</RouterLink
           >
-          <RouterLink to="/demonstrations" class="mst-public-header__nav-link"
-            >Demonstrations</RouterLink
-          >
           <RouterLink
             to="/auth/sign-in"
             class="mst-public-header__nav-link mst-public-header__nav-link--accent"
