@@ -1,11 +1,12 @@
 <script setup lang="ts">
 import { computed } from "vue";
-import { RouterLink, RouterView, useRoute } from "vue-router";
+import { RouterLink, RouterView, useRoute, useRouter } from "vue-router";
 import { useAuthStore } from "@/store/auth.store";
 import { useCanvasStore } from "@/store/canvas.store";
 import { useSidebarState } from "@/composables/useSidebarState";
 
 const route = useRoute();
+const router = useRouter();
 const authStore = useAuthStore();
 const canvasStore = useCanvasStore();
 const { sidebarOpen, isNarrow, toggleSidebar, closeSidebar } = useSidebarState();
@@ -21,7 +22,7 @@ const pageTitle = computed(() => {
 
 function logout() {
   authStore.logout();
-  window.location.href = "/";
+  router.replace("/");
 }
 </script>
 

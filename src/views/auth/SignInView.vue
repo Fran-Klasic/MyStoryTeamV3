@@ -1,11 +1,12 @@
 <script setup lang="ts">
 import { ref } from "vue";
-import { useRoute } from "vue-router";
+import { useRoute, useRouter } from "vue-router";
 import AuthCard from "@/components/auth/AuthCard.vue";
 import SignInForm from "@/components/auth/SignInForm.vue";
 import { useAuthStore } from "@/store/auth.store";
 
 const route = useRoute();
+const router = useRouter();
 const authStore = useAuthStore();
 const errorMessage = ref("");
 
@@ -13,8 +14,10 @@ async function handleSubmit(email: string, password: string) {
   errorMessage.value = "";
   await authStore.login(email, password);
   const redirect = (route.query.redirect as string) || "/app/dashboard";
-  // Force a full reload so all auth state and guards pick up the new token
-  window.location.href = redirect;
+  const path = typeof redirect === "string" && redirect.startsWith("/") && !redirect.startsWith("//")
+    ? redirect
+    : "/app/dashboard";
+  router.replace(path);
 }
 
 function handleError(message: string) {

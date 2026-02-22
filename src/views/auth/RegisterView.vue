@@ -1,9 +1,11 @@
 <script setup lang="ts">
 import { ref } from "vue";
+import { useRouter } from "vue-router";
 import AuthCard from "@/components/auth/AuthCard.vue";
 import RegisterForm from "@/components/auth/RegisterForm.vue";
 import { useAuthStore } from "@/store/auth.store";
 
+const router = useRouter();
 const authStore = useAuthStore();
 const errorMessage = ref("");
 
@@ -15,8 +17,7 @@ async function handleSubmit(
 ) {
   errorMessage.value = "";
   await authStore.register(username, email, password, repeatPassword);
-  // Force a full reload so all auth state and guards pick up the new token
-  window.location.href = "/app/dashboard";
+  router.replace("/app/dashboard");
 }
 
 function handleError(message: string) {

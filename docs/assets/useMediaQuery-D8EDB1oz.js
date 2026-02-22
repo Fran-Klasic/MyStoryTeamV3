@@ -1,1 +1,0 @@
-import{i as s,j as r,r as i}from"./index-Y4iv2t5t.js";function o(t){const n=i(!1);let e=null;function a(){n.value=e?.matches??!1}return s(()=>{e=window.matchMedia(t),a(),e.addEventListener("change",a)}),r(()=>{e?.removeEventListener("change",a),e=null}),n}function c(){const t=o("(max-width: 900px)"),n=o("(max-width: 600px)");return{isNarrow:t,isMobile:n}}export{o as a,c as u};
