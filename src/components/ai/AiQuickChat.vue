@@ -1,27 +1,50 @@
 <script setup lang="ts">
-import { ref } from "vue";
+import { ref, watch } from "vue";
 import { useAiStore } from "@/store/ai.store";
 import MstButton from "@/components/common/MstButton.vue";
+import AiMessageContent from "./AiMessageContent.vue";
 
 const aiStore = useAiStore();
 const input = ref("");
-const sending = ref(false);
 
 async function send() {
   const text = input.value.trim();
-  if (!text || sending.value) return;
-  input.value = "";
-  sending.value = true;
-  try {
-    await aiStore.sendMessage(text);
-  } finally {
-    sending.value = false;
-  }
+  if (!text || aiStore.sending) return;
+  const ok = await aiStore.sendMessage(text);
+  if (ok) input.value = "";
 }
 
 function close() {
   aiStore.closeQuickChat();
 }
+
+function isAiMessage(msg: { type: string }) {
+  return msg.type === "response" || msg.type === "assistant";
+}
+
+function displayRole(msg: { type: string }): string {
+  return isAiMessage(msg) ? "AI" : "You";
+}
+
+function messageRoleClass(msg: { type: string }): string {
+  return isAiMessage(msg) ? "ai" : "user";
+}
+
+// When quick chat opens without a conversation, auto-create one
+watch(
+  () => aiStore.isQuickChatOpen,
+  async (open) => {
+    if (open && aiStore.currentConversationId == null) {
+      await aiStore.loadConversations();
+      if (aiStore.conversations.length === 0) {
+        await aiStore.createConversation("Quick chat");
+      } else {
+        const first = aiStore.conversations[0];
+        if (first) await aiStore.selectConversation(first.id);
+      }
+    }
+  }
+);
 </script>
 
 <template>
@@ -37,16 +60,25 @@ function close() {
         </header>
         <div class="mst-ai-quickchat__history">
           <div
-            v-for="msg in aiStore.history"
+            v-for="msg in aiStore.messages"
             :key="msg.id"
             class="mst-ai-quickchat__message"
-            :class="'mst-ai-quickchat__message--' + msg.role"
+            :class="'mst-ai-quickchat__message--' + messageRoleClass(msg)"
           >
-            <span class="mst-ai-quickchat__message-role">{{ msg.role === "user" ? "You" : "AI" }}</span>
-            <p class="mst-ai-quickchat__message-content">{{ msg.content }}</p>
+            <span class="mst-ai-quickchat__message-role">{{ displayRole(msg) }}</span>
+            <p class="mst-ai-quickchat__message-content">
+              <AiMessageContent
+                v-if="isAiMessage(msg)"
+                :content="msg.content"
+                :animate="
+                  aiStore.messages[aiStore.messages.length - 1]?.id === msg.id
+                "
+              />
+              <template v-else>{{ msg.content }}</template>
+            </p>
           </div>
-          <p v-if="aiStore.history.length === 0" class="mst-ai-quickchat__placeholder">
-            Ask about tasks, canvases, or planning. (Mock responses.)
+          <p v-if="aiStore.messages.length === 0" class="mst-ai-quickchat__placeholder">
+            Ask about tasks, canvases, or planning.
           </p>
         </div>
         <form class="mst-ai-quickchat__form" @submit.prevent="send">
@@ -55,10 +87,10 @@ function close() {
             type="text"
             class="mst-ai-quickchat__input"
             placeholder="Type a message…"
-            :disabled="sending"
+            :disabled="aiStore.sending"
           />
-          <MstButton type="submit" variant="primary" :disabled="sending || !input.trim()">
-            {{ sending ? "…" : "Send" }}
+          <MstButton type="submit" variant="primary" :disabled="aiStore.sending || !input.trim()">
+            {{ aiStore.sending ? "…" : "Send" }}
           </MstButton>
         </form>
       </div>
@@ -87,9 +119,11 @@ function close() {
   pointer-events: auto;
   width: 100%;
   max-width: 400px;
+  height: 85vh;
   max-height: 85vh;
   display: flex;
   flex-direction: column;
+  overflow: hidden;
   background: rgba(255, 255, 255, 0.98);
   border-radius: var(--mst-radius-lg) var(--mst-radius-lg) 0 0;
   border: 1px solid rgba(58, 167, 196, 0.4);
@@ -120,13 +154,18 @@ function close() {
 }
 .mst-ai-quickchat__history {
   flex: 1;
+  min-height: 0;
   overflow-y: auto;
   padding: 1rem;
-  min-height: 200px;
-  max-height: 50vh;
+  display: flex;
+  flex-direction: column;
 }
 .mst-ai-quickchat__message {
   margin-bottom: 1rem;
+  align-self: flex-end;
+}
+.mst-ai-quickchat__message--ai {
+  align-self: flex-start;
 }
 .mst-ai-quickchat__message-role {
   font-size: var(--mst-font-size-xs);
@@ -138,7 +177,7 @@ function close() {
   font-size: var(--mst-font-size-sm);
   color: var(--mst-color-text);
 }
-.mst-ai-quickchat__message--assistant .mst-ai-quickchat__message-content {
+.mst-ai-quickchat__message--ai .mst-ai-quickchat__message-content {
   padding: 0.5rem;
   background: var(--mst-color-accent-soft);
   border-radius: var(--mst-radius-sm);
@@ -149,6 +188,7 @@ function close() {
   color: var(--mst-color-text-soft);
 }
 .mst-ai-quickchat__form {
+  flex-shrink: 0;
   display: flex;
   gap: 0.5rem;
   padding: 1rem;

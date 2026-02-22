@@ -1,8 +1,11 @@
 <script setup lang="ts">
+import { ref } from "vue";
 import CanvasViewport from "@/components/canvas/CanvasViewport.vue";
 import CanvasToolbar from "@/components/canvas/CanvasToolbar.vue";
 import type { CanvasElement } from "@/types/canvas/canvas-element";
 import { useCanvasElements } from "@/composables/useCanvasElements";
+
+const selectedAddType = ref<CanvasElement["type"] | null>(null);
 
 const initial: CanvasElement[] = [
   {
@@ -89,6 +92,11 @@ function handleConnect(payload: { self: string; target: string }) {
 
 function handleAdd(payload: { type: import("@/types/canvas/canvas-element").CanvasElement["type"]; x: number; y: number }) {
   addElement(payload.type, payload.x, payload.y);
+  selectedAddType.value = null;
+}
+
+function setSelectedAddType(v: CanvasElement["type"] | null) {
+  selectedAddType.value = v;
 }
 </script>
 
@@ -101,9 +109,13 @@ function handleAdd(payload: { type: import("@/types/canvas/canvas-element").Canv
     </header>
 
     <section class="mst-discover__body">
-      <CanvasToolbar />
+      <CanvasToolbar
+        :selected-add-type="selectedAddType"
+        @update:selected-add-type="setSelectedAddType"
+      />
       <CanvasViewport
         :elements="elements"
+        :selected-add-type="selectedAddType"
         @move="handleMove"
         @resize="handleResize"
         @edit="handleEdit"
@@ -126,9 +138,15 @@ function handleAdd(payload: { type: import("@/types/canvas/canvas-element").Canv
   display: flex;
   flex-direction: column;
   gap: 1rem;
+  flex: 1;
   height: 100%;
   min-height: 0;
   overflow: hidden;
+  padding: 0 1rem 1rem;
+}
+
+.mst-discover__header {
+  flex-shrink: 0;
 }
 
 .mst-discover__header h1 {
@@ -146,6 +164,7 @@ function handleAdd(payload: { type: import("@/types/canvas/canvas-element").Canv
   gap: 1rem;
   align-items: stretch;
   flex: 1;
+  min-width: 0;
   min-height: 0;
 }
 
@@ -159,16 +178,26 @@ function handleAdd(payload: { type: import("@/types/canvas/canvas-element").Canv
 
 .mst-discover__body :deep(.mst-canvas-viewport) {
   flex: 1;
-  min-width: 560px;
+  min-width: 0;
+  max-width: 100%;
   min-height: 0;
 }
 
 @media (max-width: 600px) {
+  .mst-discover {
+    padding: 0 0.75rem 0.75rem;
+    gap: 0.75rem;
+  }
+  .mst-discover__header h1 {
+    font-size: var(--mst-font-size-lg);
+  }
   .mst-discover__body {
     flex-direction: column-reverse;
+    gap: 0.75rem;
   }
-  .mst-discover__body :deep(.mst-canvas-viewport) {
-    min-width: 0;
+  .mst-discover__body :deep(.mst-canvas-toolbar) {
+    position: static;
+    align-self: stretch;
   }
 }
 </style>

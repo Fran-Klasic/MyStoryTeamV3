@@ -16,7 +16,11 @@ import { RouterLink, RouterView } from "vue-router";
           <RouterLink to="/" class="mst-public-header__nav-link"
             >Overview</RouterLink
           >
-          <RouterLink :to="{ path: '/', hash: '#about' }" class="mst-public-header__nav-link">About</RouterLink>
+          <RouterLink
+            :to="{ path: '/', hash: '#about' }"
+            class="mst-public-header__nav-link"
+            >About</RouterLink
+          >
           <RouterLink to="/discover" class="mst-public-header__nav-link"
             >Discover</RouterLink
           >
@@ -39,6 +43,9 @@ import { RouterLink, RouterView } from "vue-router";
     <main class="mst-main-container">
       <RouterView />
     </main>
+    <p class="mst-attribution">
+      Uicons by <a href="https://www.flaticon.com/uicons" target="_blank" rel="noopener noreferrer">Flaticon</a>
+    </p>
   </div>
 </template>
 
@@ -132,6 +139,23 @@ import { RouterLink, RouterView } from "vue-router";
 
 .mst-public-header__nav-link--accent:hover {
   box-shadow: var(--mst-shadow-glow);
+}
+
+.mst-attribution {
+  position: fixed;
+  bottom: 0.5rem;
+  right: 0.75rem;
+  margin: 0;
+  font-size: 0.7rem;
+  color: var(--mst-color-text-soft);
+  z-index: 5;
+}
+.mst-attribution a {
+  color: inherit;
+  text-decoration: underline;
+}
+.mst-attribution a:hover {
+  color: var(--mst-color-text);
 }
 
 @media (max-width: 768px) {

@@ -74,6 +74,11 @@ export const useMessageStore = defineStore("message", () => {
     return `User#${senderId}`;
   }
 
+  function backToConversations() {
+    currentConversationId.value = null;
+    stopPolling();
+  }
+
   function stopPolling() {
     if (pollingIntervalId) {
       clearInterval(pollingIntervalId);
@@ -323,6 +328,7 @@ export const useMessageStore = defineStore("message", () => {
     startConversationWith,
     parseUsernameIdInput,
     stopPolling,
+    backToConversations,
     getLastMessagePreview,
     getUsernameForSender,
     getConversationDisplayName,

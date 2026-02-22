@@ -3,8 +3,10 @@ import { ref, computed, onMounted, onBeforeUnmount, watch, nextTick } from "vue"
 import { useRoute } from "vue-router";
 import { useMessageStore } from "@/store/message.store";
 import { useAuthStore } from "@/store/auth.store";
+import { useMediaQuery } from "@/composables/useMediaQuery";
 
 const route = useRoute();
+const isMobile = useMediaQuery("(max-width: 768px)");
 const messageStore = useMessageStore();
 const authStore = useAuthStore();
 
@@ -205,8 +207,17 @@ watch(
       <h1 class="mst-messages__title">Messages</h1>
       <p class="mst-messages__subtitle">Direct messages with other users.</p>
     </header>
-    <div class="mst-messages__layout">
-      <aside class="mst-messages__list">
+    <div
+      class="mst-messages__layout"
+      :class="{
+        'mst-messages__layout--mobile': isMobile,
+        'mst-messages__layout--mobile-thread': isMobile && messageStore.currentConversationId,
+      }"
+    >
+      <aside
+        class="mst-messages__list"
+        :class="{ 'mst-messages__list--hidden': isMobile && messageStore.currentConversationId }"
+      >
         <button
           type="button"
           class="mst-messages__new-btn"
@@ -239,12 +250,24 @@ watch(
           </span>
         </button>
       </aside>
-      <main class="mst-messages__panel">
+      <main
+        class="mst-messages__panel"
+        :class="{ 'mst-messages__panel--hidden': isMobile && !messageStore.currentConversationId }"
+      >
         <p v-if="!messageStore.currentConversationId" class="mst-messages__placeholder">
           Select a conversation
         </p>
         <div v-else class="mst-messages__thread">
           <header class="mst-messages__thread-header">
+            <button
+              v-if="isMobile"
+              type="button"
+              class="mst-messages__back-btn"
+              aria-label="Back to conversations"
+              @click="messageStore.backToConversations"
+            >
+              <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 12H5M12 19l-7-7 7-7"/></svg>
+            </button>
             <template v-if="editingConvName === messageStore.currentConversationId">
               <input
                 v-model="editingConvNameValue"
@@ -373,18 +396,49 @@ watch(
 .mst-messages__layout {
   display: grid;
   grid-template-columns: 280px 1fr;
+  grid-template-rows: minmax(0, 1fr);
   gap: 1rem;
   min-height: 400px;
+  height: calc(100vh - 10rem);
+  max-height: calc(100vh - 10rem);
   background: rgba(255, 255, 255, 0.9);
   border-radius: var(--mst-radius-lg);
   border: 1px solid rgba(58, 167, 196, 0.35);
   overflow: hidden;
 }
+@media (max-width: 768px) {
+  .mst-messages__header {
+    margin-bottom: 1rem;
+  }
+  .mst-messages__title {
+    font-size: var(--mst-font-size-lg);
+  }
+  .mst-messages__layout {
+    grid-template-columns: 1fr;
+    height: calc(100vh - 8rem);
+    min-height: 50vh;
+    max-height: calc(100vh - 8rem);
+  }
+  .mst-messages__list--hidden {
+    display: none !important;
+  }
+  .mst-messages__panel--hidden {
+    display: none !important;
+  }
+  .mst-messages__new-btn {
+    margin: 0.5rem 0.75rem;
+    padding: 0.75rem 1rem;
+    min-height: 44px;
+  }
+}
 .mst-messages__list {
   display: flex;
   flex-direction: column;
+  min-height: 0;
   border-right: 1px solid rgba(58, 167, 196, 0.25);
   overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+  touch-action: pan-y;
 }
 .mst-messages__new-btn {
   margin: 0.75rem;
@@ -405,7 +459,9 @@ watch(
   display: flex;
   flex-direction: column;
   align-items: flex-start;
-  padding: 1rem;
+  padding: 0.875rem 1rem;
+  min-height: 44px;
+  touch-action: manipulation;
   border: none;
   background: transparent;
   cursor: pointer;
@@ -432,6 +488,7 @@ watch(
   flex-direction: column;
   padding: 0;
   min-height: 0;
+  overflow: hidden;
 }
 .mst-messages__placeholder,
 .mst-messages__loading,
@@ -447,15 +504,31 @@ watch(
   flex-direction: column;
   flex: 1;
   min-height: 0;
+  overflow: hidden;
 }
 .mst-messages__thread-header {
   flex-shrink: 0;
   display: flex;
   align-items: center;
   gap: 0.5rem;
-  padding: 0.75rem 1.5rem;
+  padding: 0.75rem 1rem;
   border-bottom: 1px solid rgba(58, 167, 196, 0.25);
   background: rgba(255, 255, 255, 0.6);
+}
+.mst-messages__back-btn {
+  flex-shrink: 0;
+  padding: 0.35rem;
+  margin: -0.35rem 0 -0.35rem -0.35rem;
+  border: none;
+  background: transparent;
+  color: var(--mst-color-text-soft);
+  cursor: pointer;
+  border-radius: var(--mst-radius-sm);
+  touch-action: manipulation;
+}
+.mst-messages__back-btn:hover {
+  color: var(--mst-color-accent);
+  background: rgba(58, 167, 196, 0.15);
 }
 .mst-messages__thread-name {
   font-weight: 600;
@@ -491,12 +564,17 @@ watch(
   flex: 1;
   min-height: 0;
   overflow-y: auto;
+  overflow-x: hidden;
+  -webkit-overflow-scrolling: touch;
+  touch-action: pan-y;
   display: flex;
   flex-direction: column;
+  overscroll-behavior: contain;
+  position: relative;
 }
 .mst-messages__messages {
   flex: 1;
-  overflow-y: auto;
+  min-height: min-content;
   padding: 1rem 1.5rem;
   display: flex;
   flex-direction: column;
@@ -548,6 +626,15 @@ watch(
 .mst-messages__compose-row {
   display: flex;
   gap: 0.5rem;
+}
+@media (max-width: 768px) {
+  .mst-messages__compose,
+  .mst-messages__messages {
+    padding: 0.75rem 1rem;
+  }
+  .mst-messages__bubble {
+    max-width: 88%;
+  }
 }
 .mst-messages__send-error {
   margin: 0;

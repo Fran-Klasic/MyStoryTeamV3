@@ -87,6 +87,9 @@ function logout() {
         <RouterView />
       </main>
     </div>
+    <p class="mst-attribution">
+      Uicons by <a href="https://www.flaticon.com/uicons" target="_blank" rel="noopener noreferrer">Flaticon</a>
+    </p>
   </div>
 </template>
 
@@ -240,6 +243,23 @@ function logout() {
 
 .mst-app-sidebar--drawer-open {
   transform: translateX(0);
+}
+
+.mst-attribution {
+  position: fixed;
+  bottom: 0.5rem;
+  right: 0.75rem;
+  margin: 0;
+  font-size: 0.7rem;
+  color: var(--mst-color-text-soft);
+  z-index: 5;
+}
+.mst-attribution a {
+  color: inherit;
+  text-decoration: underline;
+}
+.mst-attribution a:hover {
+  color: var(--mst-color-text);
 }
 
 @media (max-width: 900px) {

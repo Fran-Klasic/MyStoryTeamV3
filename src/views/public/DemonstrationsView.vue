@@ -68,7 +68,7 @@ import MstCard from "@/components/common/MstCard.vue";
 .mst-demos__stats,
 .mst-demos__grid {
   display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
+  grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
   gap: 1rem;
 }
 
@@ -78,10 +78,13 @@ import MstCard from "@/components/common/MstCard.vue";
   color: var(--mst-color-text-soft);
 }
 
-@media (max-width: 900px) {
+@media (max-width: 600px) {
+  .mst-demos {
+    gap: 1.5rem;
+  }
   .mst-demos__stats,
   .mst-demos__grid {
-    grid-template-columns: minmax(0, 1fr);
+    gap: 0.75rem;
   }
 }
 </style>
