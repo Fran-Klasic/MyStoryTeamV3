@@ -1,6 +1,8 @@
 # My Story Team
-##The Website
+## The Website
 https://fran-klasic.github.io/MyStoryTeamV3/
+
+---
 
 **Turn your life goals into a story worth directing.**
 
