@@ -16,10 +16,17 @@ const mainContainerClass = computed(() =>
     <header class="mst-public-header">
       <div class="mst-public-header__inner">
         <RouterLink to="/" class="mst-public-header__brand">
-          <span class="mst-public-header__title">My Story Team</span>
-          <span class="mst-public-header__subtitle"
-            >Cinematic Planner &amp; Helper</span
-          >
+          <img
+            src="/assets/icons/logo.svg"
+            alt="My Story Team logo"
+            class="mst-public-header__logo"
+          />
+          <div class="mst-public-header__brand-text">
+            <span class="mst-public-header__title">My Story Team</span>
+            <span class="mst-public-header__subtitle"
+              >Cinematic Planner &amp; Helper</span
+            >
+          </div>
         </RouterLink>
         <nav class="mst-public-header__nav">
           <RouterLink to="/" class="mst-public-header__nav-link"
@@ -116,6 +123,20 @@ const mainContainerClass = computed(() =>
 
 .mst-public-header__brand {
   display: flex;
+  align-items: center;
+  gap: 0.65rem;
+  text-decoration: none;
+}
+
+.mst-public-header__logo {
+  width: 2.25rem;
+  height: 2.25rem;
+  object-fit: contain;
+  flex-shrink: 0;
+}
+
+.mst-public-header__brand-text {
+  display: flex;
   flex-direction: column;
   gap: 0.1rem;
 }
@@ -196,6 +217,11 @@ const mainContainerClass = computed(() =>
   .mst-public-header__nav {
     flex-wrap: wrap;
     justify-content: flex-start;
+  }
+
+  .mst-public-header__logo {
+    width: 2rem;
+    height: 2rem;
   }
 }
 </style>
