@@ -7,12 +7,16 @@ import { registerOnUnauthorized } from "@/api/api-handler";
 import { useAuthStore } from "@/store/auth.store";
 
 const app = createApp(App);
-app.use(createPinia());
+const pinia = createPinia();
+app.use(pinia);
 app.use(router);
+
+const authStore = useAuthStore(pinia);
+void authStore.initializeAuth();
 
 // When any API returns 401, clear token and redirect to sign-in
 registerOnUnauthorized(() => {
-  useAuthStore().logout();
+  useAuthStore(pinia).logout();
   router.replace("/auth/sign-in");
 });
 

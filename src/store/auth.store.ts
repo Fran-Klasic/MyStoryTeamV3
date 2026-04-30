@@ -4,10 +4,29 @@ import * as authService from "@/api/auth.service";
 import { getAccessToken } from "@/api/api-handler";
 import type { User } from "@/types/auth";
 
+function isJwtExpired(token: string): boolean {
+  const parts = token.split(".");
+  if (parts.length < 2) return true;
+  const payloadPart = parts[1];
+  if (!payloadPart) return true;
+  try {
+    const payloadJson = atob(payloadPart.replace(/-/g, "+").replace(/_/g, "/"));
+    const payload = JSON.parse(payloadJson) as { exp?: number };
+    if (typeof payload.exp !== "number") return true;
+    const nowInSeconds = Date.now() / 1000;
+    return payload.exp <= nowInSeconds;
+  } catch {
+    return true;
+  }
+}
+
 export const useAuthStore = defineStore("auth", () => {
   const user = ref<User | null>(null);
   // Keep token in store so isAuthenticated is reactive; sync with api-handler
   const token = ref<string | null>(getAccessToken());
+  const initialized = ref(false);
+  const initializing = ref(false);
+  const initPromise = ref<Promise<boolean> | null>(null);
 
   const isAuthenticated = computed(() => !!token.value);
 
@@ -47,6 +66,46 @@ export const useAuthStore = defineStore("auth", () => {
     user.value = null;
   }
 
+  function isTokenValidLocally() {
+    if (!token.value) return false;
+    return !isJwtExpired(token.value);
+  }
+
+  async function initializeAuth(force = false): Promise<boolean> {
+    if (initialized.value && !force) return isAuthenticated.value;
+    if (initPromise.value && !force) return initPromise.value;
+
+    const pending = (async () => {
+      initializing.value = true;
+      token.value = getAccessToken();
+
+      if (!token.value || isJwtExpired(token.value)) {
+        logout();
+        initialized.value = true;
+        initializing.value = false;
+        return false;
+      }
+
+      const refreshed = await refreshUser();
+      if (!refreshed || !getAccessToken()) {
+        logout();
+        initialized.value = true;
+        initializing.value = false;
+        return false;
+      }
+
+      token.value = getAccessToken();
+      initialized.value = true;
+      initializing.value = false;
+      return true;
+    })();
+
+    initPromise.value = pending.finally(() => {
+      initPromise.value = null;
+    });
+    return initPromise.value;
+  }
+
   async function refreshUser() {
     const u = await authService.refreshUser();
     user.value = u;
@@ -57,9 +116,13 @@ export const useAuthStore = defineStore("auth", () => {
   return {
     user,
     isAuthenticated,
+    initialized,
+    initializing,
     login,
     register,
     logout,
+    isTokenValidLocally,
+    initializeAuth,
     refreshUser,
   };
 });

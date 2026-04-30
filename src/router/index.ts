@@ -94,8 +94,11 @@ const router = createRouter({
   },
 });
 
-router.beforeEach((to) => {
+router.beforeEach(async (to) => {
   const authStore = useAuthStore();
+  if (!authStore.initialized && authStore.isAuthenticated) {
+    await authStore.initializeAuth();
+  }
   if (to.meta.requiresAuth && !authStore.isAuthenticated) {
     return { path: "/auth/sign-in", query: { redirect: to.fullPath } };
   }

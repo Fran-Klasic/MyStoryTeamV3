@@ -1,5 +1,14 @@
 <script setup lang="ts">
 import { RouterLink, RouterView } from "vue-router";
+import { computed } from "vue";
+import { useRoute } from "vue-router";
+
+const route = useRoute();
+const mainContainerClass = computed(() =>
+  route.name === "discover"
+    ? "mst-main-container--canvas-demo"
+    : "mst-main-container--default",
+);
 </script>
 
 <template>
@@ -37,11 +46,17 @@ import { RouterLink, RouterView } from "vue-router";
       </div>
     </header>
 
-    <main class="mst-main-container">
+    <main class="mst-main-container" :class="mainContainerClass">
       <RouterView />
     </main>
     <p class="mst-attribution">
-      Uicons by <a href="https://www.flaticon.com/uicons" target="_blank" rel="noopener noreferrer">Flaticon</a>
+      Uicons by
+      <a
+        href="https://www.flaticon.com/uicons"
+        target="_blank"
+        rel="noopener noreferrer"
+        >Flaticon</a
+      >
     </p>
   </div>
 </template>
@@ -51,12 +66,29 @@ import { RouterLink, RouterView } from "vue-router";
   display: flex;
   flex-direction: column;
   min-height: 100vh;
+  width: 100%;
+  max-width: 100%;
+  overflow-x: hidden;
   overflow-y: auto;
 }
 .mst-main-container {
   flex: 1;
   min-height: 0;
+  overflow-x: hidden;
   overflow-y: auto;
+}
+
+.mst-main-container--default {
+  max-width: 1120px;
+  margin: 0 auto;
+  padding: var(--mst-space-2xl) var(--mst-space-lg) 4rem;
+}
+
+.mst-main-container--canvas-demo {
+  width: 100%;
+  max-width: 100%;
+  margin: 0;
+  padding: 0;
 }
 .mst-public-header {
   position: sticky;

@@ -139,6 +139,8 @@ function setSelectedAddType(v: CanvasElement["type"] | null) {
   flex-direction: column;
   gap: 1rem;
   flex: 1;
+  width: 100%;
+  max-width: 100%;
   height: 100%;
   min-height: 0;
   overflow: hidden;
@@ -164,6 +166,9 @@ function setSelectedAddType(v: CanvasElement["type"] | null) {
   gap: 1rem;
   align-items: stretch;
   flex: 1;
+  width: 100%;
+  max-width: 100%;
+  overflow: hidden;
   min-width: 0;
   min-height: 0;
 }
@@ -178,6 +183,7 @@ function setSelectedAddType(v: CanvasElement["type"] | null) {
 
 .mst-discover__body :deep(.mst-canvas-viewport) {
   flex: 1;
+  width: 100%;
   min-width: 0;
   max-width: 100%;
   min-height: 0;
