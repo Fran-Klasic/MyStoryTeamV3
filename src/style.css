@@ -2,6 +2,13 @@
 @import "./design/typography.css";
 @import "./design/animations.css";
 
+@font-face {
+  font-family: "OpenDyslexic";
+  src: url("https://cdn.jsdelivr.net/npm/open-dyslexic@1.0.3/woff/OpenDyslexic-Regular.woff")
+    format("woff");
+  font-display: swap;
+}
+
 *,
 *::before,
 *::after {
@@ -18,4 +25,44 @@ body {
 
 #app {
   min-height: 100vh;
+}
+
+body {
+  transition:
+    background-color var(--mst-duration) var(--mst-ease-standard),
+    color var(--mst-duration) var(--mst-ease-standard);
+}
+
+body.mst-a11y-font-dyslexic {
+  --mst-font-family-base: "OpenDyslexic", "Comic Sans MS", "Trebuchet MS", sans-serif;
+}
+
+body.mst-a11y-font-readable {
+  --mst-font-family-base: Inter, Arial, "Helvetica Neue", Helvetica, sans-serif;
+}
+
+body.mst-a11y-letter-spacing {
+  letter-spacing: 0.04em;
+}
+
+body.mst-a11y-line-height {
+  --mst-line-height-normal: 1.8;
+  --mst-line-height-tight: 1.28;
+}
+
+body.mst-a11y-word-spacing {
+  word-spacing: 0.18em;
+}
+
+html.mst-a11y-larger-text {
+  font-size: 106.25%;
+}
+
+body.mst-a11y-high-contrast {
+  --mst-color-bg: #f3fcff;
+  --mst-color-text: #0b1220;
+  --mst-color-text-soft: #1f2a3a;
+  --mst-color-bg-elevated: #0f172a;
+  --mst-color-text-inverse: #f8fbff;
+  --mst-color-surface-border: #18769b;
 }

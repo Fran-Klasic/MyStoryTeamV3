@@ -2,6 +2,7 @@
 import { onMounted, onBeforeUnmount } from "vue";
 import { RouterView } from "vue-router";
 import AiQuickChat from "@/components/ai/AiQuickChat.vue";
+import AccessibilityToggle from "@/components/common/AccessibilityToggle.vue";
 import { useAiStore } from "@/store/ai.store";
 
 const aiStore = useAiStore();
@@ -25,6 +26,7 @@ onBeforeUnmount(() => {
   <div class="mst-app-root">
     <RouterView />
     <AiQuickChat />
+    <AccessibilityToggle />
   </div>
 </template>
 
