@@ -65,51 +65,6 @@ Instead of facing the future as one overwhelming task, users focus on meaningful
 
 ---
 
-## Getting Started
-
-### Prerequisites
-
-- Node.js 18+
-- npm or pnpm
-
-### Installation
-
-```bash
-# Clone the repository
-git clone https://github.com/your-org/mystoryteamv3.git
-cd mystoryteamv3
-
-# Install dependencies
-npm install
-
-# Start the development server
-npm run dev
-```
-
-### Environment Variables
-
-Create a `.env` file (see `.env.example` for reference) and configure:
-
-```env
-VITE_API_BASE_URL=https://localhost:7109
-```
-
-Adjust the API base URL to match your backend server.
-
-### Build
-
-```bash
-npm run build
-```
-
-### Preview Production Build
-
-```bash
-npm run preview
-```
-
----
-
 ## Project Structure
 
 ```
